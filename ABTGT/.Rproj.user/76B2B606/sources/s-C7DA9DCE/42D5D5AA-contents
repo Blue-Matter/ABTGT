@@ -1,0 +1,38 @@
+
+library(mvtnorm)
+library("PerformanceAnalytics")
+
+setwd("G:/Shared drives/BM shared/1. Projects/Bluefin_Gene_Tag")
+
+CorSamp <- function(r, n, nvar,plot=F){
+  #set.seed(Sys.time())
+  C <- matrix(r,nrow=nvar,ncol=nvar)
+  C[cbind(1:nvar,1:nvar)]<-1
+  SN <- rmvnorm(mean = rep(0,nvar), sig = C, n = n)
+  U <- pnorm(SN)
+  if(plot)chart.Correlation(U, histogram=TRUE, pch=19)
+  U
+}
+
+jpeg(paste0(getwd(),"/Images/Corw99.jpg"),res=400,width=4,height=4,units="in")
+  temp<-CorSamp(0.99,1000,2,plot=T)
+dev.off()
+
+jpeg(paste0(getwd(),"/Images/Corw75.jpg"),res=400,width=4,height=4,units="in")
+  CorSamp(0.75,1000,2,plot=T)
+dev.off()
+
+jpeg(paste0(getwd(),"/Images/Corw01.jpg"),res=400,width=4,height=4,units="in")
+  CorSamp(1,1000,2,plot=T)
+dev.off()
+
+
+#inverse transform sampling method
+
+
+
+
+
+
+
+
