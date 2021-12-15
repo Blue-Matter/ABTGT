@@ -11,6 +11,7 @@ make_GT<-function(OM,nT=1000,seed=1){
 
   npop <- OM@npop
   nyears <- OM@nyears
+  proyears <- OM@proyears
   nfleets <- OM@nfleets
   nareas <- OM@nareas
   nsubyears <- OM@nsubyears
@@ -18,17 +19,17 @@ make_GT<-function(OM,nT=1000,seed=1){
   nma <- OM@nma
   nsim <- OM@nsim
 
-  Rel = array(0,c(nsim,nfleets,nyears,nsubyears,nareas)) # releases by fleet (age not specified)
+  Rel = array(0,c(nsim,nfleets,proyears+1,nsubyears,nareas)) # releases by fleet (age not specified)
 
   # Default to a spatio-temporally and fleet homogenous random distribution of releases
-  nstrata<-nfleets*nyears*nsubyears*nareas
+  nstrata<-nfleets*(proyears+1)*nsubyears*nareas
   for(i in 1:nsim){
-    ind<-TEG(c(nfleets,nyears,nsubyears,nareas))
+    ind<-TEG(c(nfleets,(proyears+1),nsubyears,nareas))
     ind2<-cbind(rep(i,nstrata),ind)
     Rel[ind2]<-as.vector(rmultinom(1,nT,rep(1/nstrata,nstrata)))
   }
 
-  TH = array(0,c(nT,nsim,npop,nyears,nsubyears))         # tag history (recorded tag capture history - what is submitted to an MP)
+  TH = array(0,c(nT,nsim,npop,(proyears+1),nsubyears))         # tag history (recorded tag capture history - what is submitted to an MP)
   TAL = array(0,c(nT,nsim,npop,nareas))                  # internal array tracking the spatial location of tags
   Tage = array(0,c(nT,nsim))                             # internal array tracking age of the tagged fish for F and M calcs
 
@@ -45,7 +46,7 @@ make_GT<-function(OM,nT=1000,seed=1){
 
 }
 
-make_GT_arrays<-function(doGT,GT,nsim,npop,proyears,nsubyears){
+make_GT_arrays<-function(doGT,GT,nsim,npop,proyears,nsubyears,nages){
 
   if(doGT){
     nT<-sum(GT$Rel)
@@ -55,7 +56,7 @@ make_GT_arrays<-function(doGT,GT,nsim,npop,proyears,nsubyears){
     assign("TH",TH,envir=globalenv())
     assign("TAL",TAL,envir=globalenv())
     assign("Tage",Tage,envir=globalenv())
-    assign("Rel",GT$Rel)
+    assign("Rel",GT$Rel,envir=globalenv())
   }else{
     assign("TH",NULL,envir=globalenv()) # need a null object for the dset array even if gene tagging observations aren't available
   }
