@@ -1,26 +1,26 @@
 {
-    "id": "1C9A6F5C",
-    "path": "C:/Users/tcarruth/Dropbox/abft-mse/R_package/ABTMSE/DESCRIPTION",
-    "project_path": null,
+    "id": "2429E47E",
+    "path": "~/GitHub/ABTGT/ABTGT/DESCRIPTION",
+    "project_path": "DESCRIPTION",
     "type": "dcf",
     "hash": "0",
     "contents": "",
     "dirty": false,
-    "created": 1639071935237.0,
+    "created": 1639069816224.0,
     "source_on_save": false,
-    "relative_order": 6,
+    "relative_order": 2,
     "properties": {
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "38,0",
-        "scrollLine": "11"
+        "cursorPosition": "11,10",
+        "scrollLine": "0"
     },
     "folds": "",
-    "lastKnownWriteTime": 1635781619,
+    "lastKnownWriteTime": 1641255767,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1635781619,
+    "last_content_update": 1641255767784,
     "read_only": false,
     "read_only_alternatives": []
 }

@@ -3,7 +3,7 @@
     "path": "~/GitHub/ABTGT/ABTGT/R/GT_object.R",
     "project_path": "R/GT_object.R",
     "type": "r_source",
-    "hash": "0",
+    "hash": "809758997",
     "contents": "",
     "dirty": false,
     "created": 1639069655201.0,
@@ -12,15 +12,15 @@
     "properties": {
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "66,0",
-        "scrollLine": "40"
+        "cursorPosition": "45,43",
+        "scrollLine": "20"
     },
     "folds": "",
-    "lastKnownWriteTime": 1639091562,
+    "lastKnownWriteTime": 1641256003,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1639091562346,
+    "last_content_update": 1641256003336,
     "read_only": false,
     "read_only_alternatives": []
 }

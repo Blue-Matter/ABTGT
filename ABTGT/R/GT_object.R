@@ -42,6 +42,8 @@ make_GT<-function(OM,nT=1000,seed=1){
   GT$Tage <- Tage
   GT$rho_M <- 0 # defaults to no correlation in mortality
   GT$rho_F <- 0 # defaults to no correlation in recapture
+  GT$GTcheck <- TRUE # should diagnostics be printed / plotted?
+  GT$GTdiags<-data.frame(TFrac=rep(0,nsim))
   GT
 
 }
@@ -50,13 +52,19 @@ make_GT_arrays<-function(doGT,GT,nsim,npop,proyears,nsubyears,nages){
 
   if(doGT){
     nT<-sum(GT$Rel)
-    TH = array(0,c(nT,nsim,npop,proyears,nsubyears))         # tag history (recorded tag capture history - what is submitted to an MP)
+    TH = array(0,c(nT,nsim,npop,proyears,nsubyears))       # tag history (recorded tag capture history - what is submitted to an MP)
     TAL = array(0,c(nT,nsim,npop,nareas))                  # internal array tracking the spatial location of tags
     Tage = array(1,c(nT,nsim))                             # internal array tracking age of the tagged fish for F and M calcs
+    Tindex = rep(0,nsim)                                # a simple vector recording which tags have been released thus far
+    GTdiags = data.frame(TFrac=rep(0,nsim))
+
     assign("TH",TH,envir=globalenv())
     assign("TAL",TAL,envir=globalenv())
     assign("Tage",Tage,envir=globalenv())
     assign("Rel",GT$Rel,envir=globalenv())
+    assign("Tindex",Tindex,envir=globalenv())
+    assign("GTdiags",GTdiags,envir=globalenv())
+
   }else{
     assign("TH",NULL,envir=globalenv()) # need a null object for the dset array even if gene tagging observations aren't available
   }
