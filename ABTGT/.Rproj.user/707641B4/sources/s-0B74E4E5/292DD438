@@ -1,0 +1,26 @@
+{
+    "id": "292DD438",
+    "path": "C:/GitHub/ABTGT/ABTGT/R/calc_GT.R",
+    "project_path": "R/calc_GT.R",
+    "type": "r_source",
+    "hash": "461116475",
+    "contents": "",
+    "dirty": false,
+    "created": 1641270496063.0,
+    "source_on_save": false,
+    "relative_order": 2,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "75,3",
+        "scrollLine": "58"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1641281391,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1641281391420,
+    "read_only": false,
+    "read_only_alternatives": []
+}
