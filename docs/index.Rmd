@@ -44,9 +44,11 @@ knitr::opts_chunk$set(echo = FALSE)
 ### Project details
 
 ```{r ProjDets, eval=T}
-dat<-data.frame(c("Funding body","Funding stream","Request for proposals","Project Partners","Collaborators"),
+dat<-data.frame(c("Funding body","Funding stream","NOAA Award Number",
+"Request for proposals","Project Partners","Collaborators"),
                  c("U.S. National Oceanic and Atmospheric Administration",
                    "FY21 Bluefin Tuna Research Program",
+                   "NA21NMF4720304",
                    "NOAA-NMFS-SE-2021-2006574",
                    "The Ocean Foundation, Blue Matter Science Ltd.",
                    "Tom Carruthers, Shana Miller, Matt Lauretta, Doug Butterworth, Ann Preece, Richard Hillary"))
