@@ -1,5 +1,5 @@
 
-calc_GT<-function(GT,y,m,N,FM,M,mov,nsubyears,movIndex,nsim,nages,npop,nyears){
+calc_GT<-function(GT,y,m,N,FM,M,mov,nsubyears,movIndex,nsim,nages,npop,nyears,nareas,nfleets){
 
   TAL<-GT$TAL
   Tage<-GT$Tage
@@ -9,9 +9,9 @@ calc_GT<-function(GT,y,m,N,FM,M,mov,nsubyears,movIndex,nsim,nages,npop,nyears){
   if(m==1){
     Tage<-Tage+1 # go up an age for all tags
     Tage[Tage>nages]<-nages # plus group
-    TAL<-Tsurv(TAL,Tage,M,y-1) # apply mortality
+    TAL<-Tsurv(TAL,Tage,M,y-1,nsubyears) # apply mortality
   }else{
-    TAL<-Tsurv(TAL,Tage,M,y) # apply mortality  # checked once
+    TAL<-Tsurv(TAL,Tage,M,y,nsubyears) # apply mortality  # checked once
   }
 
   # 2 Movement
@@ -120,7 +120,7 @@ Tcalc<-function(GT,RGT,FGT,NGT,nsim,nages,npop,nfleets,nareas,y,m,nyears){
              TAL[recapTagNo[k],i,pop,]<-0  # can't be in any other area now
              TAL[recapTagNo[k],i,pop,area]<-1 # was found here
              existingtagno<-max(TH[recapTagNo[k],i,pop,,])  # current release no
-             TH[recapTagNo[k],i,pop,y,m]<-existingtagno+1  # tag history stores no+1 to record a ne release of same tag
+             TH[recapTagNo[k],i,pop,y-nyears+1,m]<-existingtagno+1  # tag history stores no+1 to record a ne release of same tag
            }
         }
 
@@ -225,7 +225,7 @@ Tmov<-function(TAL,Tage,movT,nareas){
   apply(array(Texpand*movT[movind],dim(Texpand)),c(1,2,3,5),sum)
 }
 
-Tsurv<-function(TAL,Tage,M,y){
+Tsurv<-function(TAL,Tage,M,y,nsubyears){
   TALt<-TAL
   nn<-prod(dim(TAL)[1:3]) # each tag is split over
   Tind<-TEG(dim(TAL)[1:3])# nt, sim, pop

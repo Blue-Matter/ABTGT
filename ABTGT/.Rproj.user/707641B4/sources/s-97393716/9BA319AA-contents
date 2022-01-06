@@ -1,0 +1,17 @@
+
+# Development code for ABTGT
+library(PerformanceAnalytics)
+library(mc2d) # for vectorized  array-based rmultinom
+library(ABTMSE)
+loadABT()
+
+setwd("C:/GitHub/ABTGT") # laptop
+setwd("C:/Users/tcarruth/Documents/GitHub/ABTGT") # workstation
+
+for (fl in list.files("./ABTGT/R/")) source(file.path("./ABTGT/R/", fl)) # load source code and formatted data
+
+OM<-OM_1d
+GT <- make_GT(OM,nT=10000)
+test<-new('MSE_GT',OM,list(c("U5","U5")),GT=GT)
+
+
