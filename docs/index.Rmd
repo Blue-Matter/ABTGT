@@ -1,11 +1,18 @@
 ---
-title: "Atlantic Bluefin Tuna MSE"
+title: "Evaluating Bluefin Harvest Strategies That Use Genetic Mark-Recapture Data"
 author: "Tom Carruthers <tom@bluematterscience.com>"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output: html_document
 ---
+&nbsp;
 
-![](img/Bluefin-big.jpg)
+<img src="img/Bluefin-big.jpg" width="500">
+&nbsp;
+
+<img src="img/TOF.jpg" width="200">
+<img src="img/BM.jpg" width="140">
+
+&nbsp;
 
 <style>
   .col2 {
@@ -27,100 +34,127 @@ output: html_document
 
 ```{r setup, include=FALSE}
 library(dplyr)
+library(knitr)
 knitr::opts_chunk$set(echo = FALSE)
 
 
 ```
-
 ***
 
-## Documentation 
-<div class="col2">
+### Project details
 
-[Trial Specifications Doc (.docx)](TS/TSD.docx)
+```{r ProjDets, eval=T}
+dat<-data.frame(c("Funding body","Funding stream","Request for proposals","Project Partners","Collaborators"),
+                 c("U.S. National Oceanic and Atmospheric Administration",
+                   "FY21 Bluefin Tuna Research Program",
+                   "NOAA-NMFS-SE-2021-2006574",
+                   "The Ocean Foundation, Blue Matter Science Ltd.",
+                   "Tom Carruthers, Shana Miller, Matt Lauretta, Doug Butterworth, Ann Preece, Richard Hillary"))
 
-[Trial Specifications Doc (.pdf)](TS/TSD.pdf)
+kable(dat,col.names=rep("",2)) 
+ 
 
+```
 
-[CMP Developers Guide (.html)](cMPdevelopment/CMP-Developers-Guide.html)
-
-
-</div>
-
-***
-
-## Shiny App
-
-<div class="col2">
-
-[Latest version](https://apps.bluematterscience.com/ABTMSE/)
-
-[Legacy (2020) version](https://apps.bluematterscience.com/ABTMSE_2020/)
-
-</div>
-
-***
-
-## R package
-<div class="col2">
-
-[ABTMSE R Package](https://drive.google.com/drive/folders/1ZR3IudYH8ABcweWO_hWbO1uhImFzFFPm?usp=sharing)
-
-</div>
-
-***
-
-## Operating Model Reports
-
-### Summary Reports
-
-<div class="col2">
-
-[Low length comp fit OM comparison (.html)](Reports/OM_Summary/New_Lcomp_L_summary.html)
-
-[High length comp fit OM comparison (.html)](Reports/OM_Summary/New_Lcomp_H_summary.html)
+&nbsp;
+&nbsp;
 
 
-</div>
-
-
-
-### Index Statistic Summary Reports
-<div class="col2">
-
-[Low length comp fit index stats (.html)](Reports/OM_Summary/New_Lcomp_L_Index_Fit.html)
-
-[High length comp fit index stats (.html)](Reports/OM_Summary/New_Lcomp_H_Index_Fit.html)
-
-
-</div>
-
-### Individual OM Diagnostic Reports
-
-<div class="col2">
-
-[Reference Grid OM summary and individual reports (.html)](https://drive.google.com/drive/folders/1sp8yscoGExoLle5GlNs1vG40E6bjb0V2?usp=sharing)
-
-[Robustness Set OM OM summary and individual reports (.html)](https://drive.google.com/drive/folders/192oFZT1SuDL6gA27IHUM4KVLgLyiHnPP?usp=sharing)
-
-</div>
-
-***
-
-## Meeting reports
-
-[September 2020 Second Intersessional Meeting of the ICCAT ABT MSE technical group (ENG)(.pdf)](Reports/Meeting/2020_BFTMSETG_2_ENG.pdf)
-
-[April 2021 First Intersessional Meeting of the Bluefin Tuna Species Group (ENG)(.pdf)](Reports/Meeting/2021_BFT1_ENG.pdf)
-
-[September 2021 Second Intersessional Meeting of BFT SG inc. mathematical description of CMPs (ENG)(.pdf)](Reports/Meeting/2021_BFT2_ENG.pdf)
 
 ***
 
 
-## Acknowledgements
+### Project description
 
-This work was carried out under the provision of the ICCAT Atlantic Wide Research Programme for Bluefin Tuna (GBYP), funded by the European Union, several ICCAT CPCs, the ICCAT Secretariat and by other entities (see: http://www.iccat.int/GBYP/en/Budget.htm). The contents of these materials do not necessarily reflect the point of view of ICCAT or other funders and in no ways anticipate ICCAT future policy in this area.
+The objective of this project is to use existing operating models for Atlantic bluefin tuna to evaluate the potential performance of harvest strategies that use conventional gene tagging data. 
+
+(more detail and references to come)
+
+&nbsp;
+&nbsp;
+
+***
+
+### Project status (~30%)
+
+Completed so far:
+
+* An individual tagging model has been integrated into the the MSE framework
+* Observed tag histories are now available to MPs for the setting of management advice
+* A preliminary TMB Brownie estimator has been developed and tested 
+
+Next steps: 
+
+1. testing of harvest rate / abundance estimators based on simulated tag histories
+2. generate a set of tag release designs and codify these into the package (class GT)
+3. Modify the MSE code to only do GT calcualtions if a GT management procedure is specified
+4. Develop alternative mark-recapture estimators of harvest rate and abundance
+
+&nbsp;
+&nbsp;
+
+***
+
+### Links 
+
+<div class="col2">
+
+[ABTGT GitHub Repository](https://github.com/Blue-Matter/ABTGT/)
+
+[Draft paper (private Google Doc for collaborators)](https://docs.google.com/document/d/1DduUQIQQrJFBXquaoPXIjKMvuVVZMYQf9H6phEI_uGQ/edit?usp=sharing)
+
+[Atlantic bluefin tuna MSE framework and operating models](https://iccat.github.io/abft-mse/)
+
+
+</div>
+
+&nbsp;
+&nbsp;
+
+***
+
+### Demonstration Code
+
+```{r demo, echo=TRUE, eval=FALSE}
+
+library(ABTMSE) # The ABT MSE R package
+library(ABTGT)  # The ABT Gene Tagging package
+loadABT()       # Load all MSE objects (OMs, observation error models etc)
+
+
+OM<-OM_1d       # A small (four simulation) version of the stochastic reference case operating model
+GT <- make_GT(OM,nT=10000)                      # make a gene tagging object that defines the release design
+test<-new('MSE_GT',OM,list(c("U5","U5")),GT=GT) # makes a dataset that includes tag histories
+
+dset[[1]]$TH # tag histories
+dset[[1]]$CN # observed catch numbers
+dset[[1]]$N # true simulated numbers at age
+
+  
+```
+
+
+&nbsp;
+&nbsp;
+
+
+***
+### References
+
+[NOAA BTRP](https://www.fisheries.noaa.gov/grant/bluefin-tuna-research-program)
+
+[The Ocean Foundation](https://oceanfdn.org/)
+
+[Blue Matter](https://www.bluematterscience.com/)
+
+&nbsp;
+&nbsp;
+
+***
+
+### Acknowledgements
+
+This work was funded by a US National Oceanic and Atmospheric Adiministration grant.
 
 
 &nbsp;
