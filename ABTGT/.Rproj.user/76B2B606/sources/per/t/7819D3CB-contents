@@ -1,37 +1,46 @@
 
-calc_GT<-function(y,m,N,FM,M,mov,Rel,TH,TAL,Tage,Tindex,nsubyears,movIndex,nsim,nages,npop,GTcheck,GTdiags,nyears){
+calc_GT<-function(GT,y,m,N,FM,M,mov,nsubyears,movIndex,nsim,nages,npop,nyears,nareas,nfleets){
 
-  # TH[nT,nsim,npop,proyears,nsubyears]        # tag history (recorded tag capture history - what is submitted to an MP)
-  # TAL[nT,nsim,npop,nareas)]                  # internal array tracking the spatial location of tags
-  # Tage[nT,nsim]                              # how old the tagged fish currently are
-  # N[spaymr]
-  # M[SPAY]
+  TAL<-GT$TAL
+  Tage<-GT$Tage
+  Rel<-GT$Rel
 
   # 1 Aging and natural mortality
   if(m==1){
     Tage<-Tage+1 # go up an age for all tags
     Tage[Tage>nages]<-nages # plus group
-    TAL<-Tsurv(TAL,Tage,M,y-1) # apply mortality
+    TAL<-Tsurv(TAL,Tage,M,y-1,nsubyears) # apply mortality
   }else{
-    TAL<-Tsurv(TAL,Tage,M,y) # apply mortality  # checked once
+    TAL<-Tsurv(TAL,Tage,M,y,nsubyears) # apply mortality  # checked once
   }
 
   # 2 Movement
   mi<-movIndex[y]
-  TAL<-Tmov(TAL, Tage, movT=mov[,,,mi,m,,],nareas) # checked once
+  TAL<-Tmov(TAL, Tage, movT=mov[,,,mi,m,,], nareas) # checked once
+  GT$TAL<-TAL
+  GT$Tage<-Tage
 
   # 3 At-sea Capture / Recapture / Release
-  Tcalc(TAL, Tage, Tindex,RGT=Rel[,,y-nyears+1,m,], FGT=FM[,,,y,m,,], NGT=N[,,,y,m,],
-       nsim, nages, npop, nfleets, nareas, GTcheck,GTdiags,y,m,nyears) # sim, pop, age, area, fleet
+  GT<-Tcalc(GT,RGT=Rel[,,y-nyears+1,m,], FGT=FM[,,,y,m,,], NGT=N[,,,y,m,],
+       nsim, nages, npop, nfleets, nareas, y, m, nyears) # sim, pop, age, area, fleet
 
   # 4 Exploitation capture
-  FishCap(TAL, Tage, Tindex, FGT=FM[,,,y,m,,], NGT=N[,,,y,m,],
-          nsim, nages, npop, nfleets, nareas, GTcheck,GTdiags,y,m,nyears)
+  GT<-FishCap(GT, FGT=FM[,,,y,m,,], NGT=N[,,,y,m,],
+          nsim, nages, npop, nfleets, nareas, y, m, nyears)
+
+  GT
 
 }
 
-Tcalc<-function(TAL,Tage,Tindex,RGT,FGT,NGT,nsim,nages,npop,nfleets,nareas,GTcheck,GTdiags,y,m,nyears){
+Tcalc<-function(GT,RGT,FGT,NGT,nsim,nages,npop,nfleets,nareas,y,m,nyears){
 
+  TAL<-GT$TAL
+  TH<-GT$TH
+  Tage<-GT$Tage
+  Tindex<-GT$Tindex
+  Rel<-GT$Rel
+  GTcheck <- GT$GTcheck
+  GTdiags <- GT$GTdiags
   # invent some Tags at liberty TAL[1:100,,1,7]<-1; Tage[1:100,]<-10
 
   # relative probability of capturing a fish
@@ -53,7 +62,7 @@ Tcalc<-function(TAL,Tage,Tindex,RGT,FGT,NGT,nsim,nages,npop,nfleets,nareas,GTche
   aggT<-aggregate(as.vector(TAL),list(Ta=as.vector(rep(Tage,npop*nareas)),sim=Tind[,2],pop=Tind[,3],area=Tind[,4]),FUN=sum)
   #aggT<-aggT[aggT$x!=0,]
   NTAL[as.matrix(aggT[,c(2,3,1,4)])]<-aggT[,5]
-  frac<-NTAL/NGT # binomial prop recap [sim, pop, age, area], note the denominator is not (NGT + NTAL) - Tagged individuals are 'in' the bulk transfer N
+  frac<-NTAL/(NTAL+NGT) # binomial prop recap [sim, pop, age, area], note the denominator is not (NGT + NTAL) - Tagged individuals are 'in' the bulk transfer N
 
   # sample recaptures
   # while(sum(recaps)==0) recaps<-array(rmultinomial(prod(dim(rels)),as.vector(rels),prob=cbind(as.vector(frac),as.vector(1-frac)))[,1],dim(rels))
@@ -65,6 +74,7 @@ Tcalc<-function(TAL,Tage,Tindex,RGT,FGT,NGT,nsim,nages,npop,nfleets,nareas,GTche
     recapbysim<-apply(recaps,1,sum)
     if(any(recapbysim!=0))print(paste("At-sea recapture occured in simulations:",paste((1:nsim)[recapbysim!=0],collapse=" ")))
   }
+
   rels2<-rels-recaps
 
   # Index current TAL
@@ -110,7 +120,7 @@ Tcalc<-function(TAL,Tage,Tindex,RGT,FGT,NGT,nsim,nages,npop,nfleets,nareas,GTche
              TAL[recapTagNo[k],i,pop,]<-0  # can't be in any other area now
              TAL[recapTagNo[k],i,pop,area]<-1 # was found here
              existingtagno<-max(TH[recapTagNo[k],i,pop,,])  # current release no
-             TH[recapTagNo[k],i,pop,y,m]<-existingtagno+1  # tag history stores no+1 to record a ne release of same tag
+             TH[recapTagNo[k],i,pop,y-nyears+1,m]<-existingtagno+1  # tag history stores no+1 to record a ne release of same tag
            }
         }
 
@@ -118,16 +128,24 @@ Tcalc<-function(TAL,Tage,Tindex,RGT,FGT,NGT,nsim,nages,npop,nfleets,nareas,GTche
 
   } # end of sim loop
 
-  assign("TH",TH,envir=globalenv())
-  assign("TAL",TAL,envir=globalenv())
-  assign("Tage",Tage,envir=globalenv())
-  assign("Tindex",Tindex,envir=globalenv())
-  assign("GTdiags",GTdiags,envir=globalenv())
+  GT$TH=TH
+  GT$TAL=TAL
+  GT$Tage=Tage
+  GT$Tindex=Tindex
+  GT
 
 }
 
 
-FishCap<-function(TAL,Tage,Tindex,FGT,NGT,nsim,nages,npop,nfleets,nareas,GTcheck,GTdiags,y,m,nyears){
+FishCap<-function(GT,FGT,NGT,nsim,nages,npop,nfleets,nareas,y,m,nyears){
+
+  TAL<-GT$TAL
+  TH<-GT$TH
+  Tage<-GT$Tage
+  Tindex<-GT$Tindex
+  Rel<-GT$Rel
+  GTcheck <- GT$GTcheck
+  GTdiags <- GT$GTdiags
 
   pharv<-1-exp(-FGT)# nsim,npop,nage,nareas,nfleet # harvest rate
 
@@ -152,23 +170,26 @@ FishCap<-function(TAL,Tage,Tindex,FGT,NGT,nsim,nages,npop,nfleets,nareas,GTcheck
 
     # now need to figure out whether it should be caught at all (based on total harvest rate)
     is.caught<-runif(nTi)<apply(mnpmat,1,sum)
-    Tc<-Tind[is.caught]
-    nc<-length(Tc)
-    WWc<-wherewhom[is.caught,,,drop=F]
-    rmat<-array(rep(1:nareas,each=nc),dim(WWc))
-    fmat<-array(rep(1:nfleets,each=nc*nareas),dim(WWc))
-    rc<-apply(rmat*WWc,1,sum)
-    fc<-apply(fmat*WWc,1,sum)
-    pc<-Tpop[Tc]
+    if(any(is.caught)){
+      Tc<-(1:nTi)[is.caught]
+      nc<-length(Tc)
+      WWc<-wherewhom[is.caught,,,drop=F]
+      rmat<-array(rep(1:nareas,each=nc),dim(WWc))
+      fmat<-array(rep(1:nfleets,each=nc*nareas),dim(WWc))
+      rc<-apply(rmat*WWc,1,sum)
+      fc<-apply(fmat*WWc,1,sum)
+      pc<-as.numeric(Tpop[Tc])
 
-    TAL[Tc,i,,]<-0  # kill off tagged fish
-    THind<-cbind(Tc,rep(i,nc),pc,rep(y-nyears+1,nc),rep(m,nc))
-    TH[THind]<- (-fc)
-
+      TAL[Tc,i,,]<-0  # kill off tagged fish
+      THind<-as.matrix(cbind(Tc,rep(i,nc),pc,rep(y-nyears+1,nc),rep(m,nc)),ncol=5)
+      for(k in 1:nrow(THind))TH[THind[k,1],THind[k,2],THind[k,3],THind[k,4],THind[k,5]] <- (-fc[k])
+      #TH[THind] <- (-fc) # mysteriously not working
+    }
   }
 
-  assign("TH",TH,envir=globalenv())
-  assign("TAL",TAL,envir=globalenv())
+  GT$TH=TH
+  GT$TAL=TAL
+  GT
 
 }
 
@@ -204,7 +225,7 @@ Tmov<-function(TAL,Tage,movT,nareas){
   apply(array(Texpand*movT[movind],dim(Texpand)),c(1,2,3,5),sum)
 }
 
-Tsurv<-function(TAL,Tage,M,y){
+Tsurv<-function(TAL,Tage,M,y,nsubyears){
   TALt<-TAL
   nn<-prod(dim(TAL)[1:3]) # each tag is split over
   Tind<-TEG(dim(TAL)[1:3])# nt, sim, pop
