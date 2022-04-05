@@ -62,9 +62,7 @@ kable(dat,col.names=rep("",2))
 &nbsp;
 
 
-
 ***
-
 
 ### Project description
 
