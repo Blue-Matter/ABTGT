@@ -173,9 +173,9 @@ setClass("MSE_GT",representation(
 ))
 
 setMethod("initialize", "MSE_GT", function(.Object,OM=OM_example,MPs=list(c("U5","U5")),
-                                        TAC2019=c(32240000,2350000),TAC2020=c(36000000,2179000),
-                                        TAC2021=c(36000000,2350000),TAC2022=c(36000000,2350000),
-                                        Allocation=ABTMSE:::Allocation,MPareas=NA,Fdistyrs=3,maxTAC=c(10,10),MSEparallel=F,
+                                           TAC2019=c(31133978,2305585),TAC2020=c(35032314,2269362),
+                                           TAC2021=c(36000000,2350000),TAC2022=c(36000000,2726000),
+                                           Allocation=ABTMSE:::Allocation,MPareas=NA,Fdistyrs=3,maxTAC=c(10,10),MSEparallel=F,
                                         check=FALSE,Reallocate=TRUE,GT=NULL){
 
   # .Object}); .Object<-new('MSE');

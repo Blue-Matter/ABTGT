@@ -1,0 +1,14 @@
+{
+    "dialog-state": {
+        "query": "Fleets$flag",
+        "path": "C:/Users/tcar_/Dropbox/abft-mse",
+        "regex": false,
+        "caseSensitive": false,
+        "wholeWord": false,
+        "filePatterns": [],
+        "excludeFilePatterns": [],
+        "resultsCount": 13,
+        "errorCount": 0,
+        "replaceErrors": ""
+    }
+}

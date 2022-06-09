@@ -7,7 +7,7 @@
 
 # Make a Genetic Tagging object of the right dimensions
 
-make_GT<-function(OM,nT=1000,seed=1){
+make_GT<-function(OM,nT=1000,seed=1,RD="Default"){
 
   npop <- OM@npop
   nyears <- OM@nyears
@@ -21,16 +21,18 @@ make_GT<-function(OM,nT=1000,seed=1){
 
   Rel = array(0,c(nsim,nfleets,proyears+1,nsubyears,nareas)) # releases by fleet (age not specified)
 
-  # Default to a spatio-temporally and fleet homogenous random distribution of releases
   nstrata<-nfleets*(proyears+1)*nsubyears*nareas
+  #if(is.na(RD))RDmat=array(1/nstrata,c(nfleets,proyears+1,nsubyears,nareas))
+  RDmat<-get(RD)
+
   for(i in 1:nsim){
     ind<-TEG(c(nfleets,(proyears+1),nsubyears,nareas))
     ind2<-cbind(rep(i,nstrata),ind)
-    Rel[ind2]<-as.vector(rmultinom(1,nT,rep(1/nstrata,nstrata)))
+    Rel[ind2]<-as.vector(rmultinom(1,nT,as.vector(RDmat)))
   }
 
-  TH = array(0,c(nT,nsim,npop,(proyears+1),nsubyears))         # tag history (recorded tag capture history - what is submitted to an MP)
-  TAL = array(0,c(nT,nsim,npop,nareas))                  # internal array tracking the spatial location of tags
+  TH = array(0,c(nT,nsim,npop,(proyears+1),nsubyears))   # tag history (recorded tag capture history - what is submitted to an MP)
+  TAL = array(1E-10,c(nT,nsim,npop,nareas))                  # internal array tracking the spatial location of tags
   Tage = array(0,c(nT,nsim))                             # internal array tracking age of the tagged fish for F and M calcs
   Tindex = rep(0,nsim)
   # N<-SSB<-BBd<-Z<-array(NA,c(nsim,npop,nages,allyears,nsubyears,nareas)) # only need aggregated catch for these purposes
@@ -66,12 +68,6 @@ make_GT_arrays<-function(doGT,GT,nsim,npop,proyears,nsubyears,nages){
 
   GTdat
 }
-
-
-
-
-
-
 
 
 # Impose non-independence in capture
