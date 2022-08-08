@@ -1,81 +1,3 @@
-Maa<-aperm(array(unlist(lapply(output,FUN=function(x)x$MAA[yind,])),c(ny,na,nsim)),c(3,2,1))
-Mataa<-aperm(array(obj$input$data$mature[yind,],c(ny,na,nsim)),c(3,2,1))
-waa<-aperm(array(obj$input$data$waa[WAAind,yind,],c(ny,na,nsim)),c(3,2,1))
-laa<-(waa/WLa)^(1/WLb)
-h=0.999
-CurrentYr<-obj$years[length(obj$years)]
-if(is.null(Name)) Name=obj$model_name
-Name<-estVar()
-Name<-estVar
-Name<-"test"
-CurrentYr<-obj$years[length(obj$years)]
-if(is.null(Name)) Name=obj$model_name
-OM<-VPA2OM(Name, proyears, interval, CurrentYr, h=h, Obs, Imp,
-naa, faa, waa, Mataa, Maa, laa, fecaa=waa*Mataa,
-nyr_par_mu, LowerTri,
-recind=1, plusgroup, altinit=0, fixq1=fixq1,# recind = 1 because WHAM models report at age arrays starting second year of life ie not age zero
-report=report, silent=silent, R0 = apply(naa[,1,]*exp(Maa[,1,]),1,mean))
-OM<-VPA2OM(Name, proyears, interval, CurrentYr, h=h, Obs, Imp,
-naa, faa, waa, Mataa, Maa, laa, fecaa=waa*Mataa,
-nyr_par_mu, LowerTri,
-recind=1, plusgroup, altinit=0, fixq1=fixq1,# recind = 1 because WHAM models report at age arrays starting second year of life ie not age zero
-report=report, silent=silent, R0 = apply(naa[,1,]*exp(Maa[,1,]),1,mean))
-simup<-function(param, OM, do_slot = TRUE){   # Generic function for converting VPA outputs to an OM
-paramnam<-deparse(substitute(param))
-if(length(param)==1){
-OM@cpars[[paramnam]]<-rep(param,nsim)
-}else if(length(param)<nsim){
-stop(paste('parameter vector', paramnam, 'was length',length(param),'which is neither length 1 or nsim long'))
-}else{
-OM@cpars[[paramnam]]<-param
-}
-if(do_slot) slot(OM,paramnam)<-rep(param[1],2)
-OM
-}
-cond <- vapply(list(faa, waa, Mataa, Maa, laa), function(x) all(dim(naa) == dim(x)), logical(1))
-if(!length(cond) || any(is.na(cond)) || any(!cond)) {
-stop('One or more of the following arrays do not have the same shape: naa, faa, waa, Mataa, Maa, Laa')
-}
-waa * Mataa
-fecaa <- waa * Mataa
-nyears<-dim(naa)[3]
-nsim<-dim(naa)[1]
-if(recind==1) {  # create a dummy age 0 dimension to the various arrays
-ageind<-1:dim(naa)[2]
-dims<-c(nsim,1,nyears)
-zeros<-array(0,dims)
-# N0 back inputed
-rec<-naa[,1,2:nyears]#*exp(Maa[,1,2:nyears])
-muR0<-apply(rec,1,mean) # mean R0 is assumed for most recent N0 - will be filled anyway using LowerTri argument
-N0<-array(cbind(rec,muR0),dims)
-naa<-abind(N0,naa,along=2)
-# F, weight, length and maturity assumed to be zero
-faa<-abind(zeros,faa,along=2)
-waa<-abind(zeros,waa,along=2)
-Mataa<-abind(zeros,Mataa,along=2)
-laa<-abind(zeros,laa,along=2)
-fecaa<-abind(zeros,fecaa,along=2)
-# M copied from first year to age zero
-Maa<-abind(array(tiny + .Machine$double.eps,dim(Maa[,1,])),Maa,along=2)
-message("Age zero positions for arrays were created with the following assumptions: N(0) = N(1) * exp(M(1)), N0 in most recent year is mean(R0), F(0) = weight(0) = maturity(0) = length(0) = 0, M(0) = M(1)")
-}
-recind
-recind<-1
-ageind<-1:dim(naa)[2]
-dims<-c(nsim,1,nyears)
-zeros<-array(0,dims)
-# N0 back inputed
-rec<-naa[,1,2:nyears]#*exp(Maa[,1,2:nyears])
-muR0<-apply(rec,1,mean) # mean R0 is assumed for most recent N0 - will be filled anyway using LowerTri argument
-N0<-array(cbind(rec,muR0),dims)
-naa<-abind(N0,naa,along=2)
-# F, weight, length and maturity assumed to be zero
-faa<-abind(zeros,faa,along=2)
-waa<-abind(zeros,waa,along=2)
-Mataa<-abind(zeros,Mataa,along=2)
-laa<-abind(zeros,laa,along=2)
-fecaa<-abind(zeros,fecaa,along=2)
-library(abind)
 ageind<-1:dim(naa)[2]
 dims<-c(nsim,1,nyears)
 zeros<-array(0,dims)
@@ -510,3 +432,81 @@ ncol(simdat)
 hist(simdat[,1])
 names(simdat)<-c("VB",paste0("IV",1:(ncol(simdat)-1)))
 saveRDS(simdat,"./Sim_Data/simdataL3.rda")
+library(openMSE)
+library(wham)
+# 2. Run Simulations
+setwd("C:/Users/tcarruth/Documents/GitHub/AI-MP-EGB")
+setwd("C:/GitHub/AI-MP-EGB")
+Base<-readRDS("./Operating_Models/Base_dat.rda")
+# --- Make exploratory MPs -------------------
+FMP<-function(x, Data, reps = 100, plot = FALSE, Flev=0.6, CV=0.1) {
+Rec <- new("Rec")
+y <- max(Data@Year) - Data@LHYear + 1
+nyears <- length(Data@Misc$FleetPars$Find[x, ])
+q <- Data@Misc$FleetPars$qs[x]
+qvar <- Data@Misc$FleetPars$qvar[x, y]
+if (length(qvar) < 1)   qvar <- 1
+qinc <- Data@Misc$FleetPars$qinc[x]
+qcur <- qvar * q * (1 + qinc/100)^y
+HistE <- Data@OM$FinF[x]
+MSYE <- Flev/qcur
+Rec@Effort <- MSYE/HistE * rlnorm(1,0,CV)
+Rec
+}
+F_hi<-function(x,Data,reps)FMP(x=x,Data=Data,reps=reps,Flev=0.6)
+F_med<-function(x,Data,reps)FMP(x=x,Data=Data,reps=reps,Flev=0.4)
+F_low<-function(x,Data,reps)FMP(x=x,Data=Data,reps=reps,Flev=0.2)
+F_hi_v<-function(x,Data,reps)FMP(x=x,Data=Data,reps=reps,Flev=0.6, CV=0.3)
+F_med_v<-function(x,Data,reps)FMP(x=x,Data=Data,reps=reps,Flev=0.4, CV=0.3)
+F_low_v<-function(x,Data,reps)FMP(x=x,Data=Data,reps=reps,Flev=0.2, CV=0.3)
+class(F_hi)<-class(F_med)<-class(F_low)<-class(F_hi_v)<-class(F_med_v)<-class(F_low_v)<-"MP"
+simMPs <- c("F_hi","F_med","F_low","F_hi_v","F_med_v","F_low_v")
+# test2 <- runMSE(MPs=simMPs); plot(test2)
+obj<-readRDS("./Data/Base.rda") # WHAM assessment object
+ni<-180
+MPs<-1:length(simMPs)
+inds<-expand.grid(1:ni,MPs)
+if(error){ # if for some reason the whole set did not fully complete, this filters inds according to the files calculated
+files<-list.files("C:/temp/MSEs3/")
+nis<-sapply(files,function(x)strsplit(x,split="_")[[1]][2])
+MPss<-sapply(files,function(x)substr(strsplit(x,split="_")[[1]][3],1,1))
+fcode<-paste(nis,MPss,sep="_")
+icode<-paste(as.character(inds[,1]),as.character(inds[,2]),sep="_")
+keep<-!(icode%in%fcode)
+inds<-inds[keep,]
+}
+parrun<-function(x,inds,obj,simMPs, Base){
+i<-inds[x,1]
+MP<-inds[x,2]
+seed<-(i*100)+i*MP
+set.seed(seed)
+OM <- MSEtool:::WHAM2OM(obj, report=F, nsim=200, LowerTri = 1,interval=1) # report = T produces a diagnostic showing WHAM vs OM matching of numbers at age
+OM@cpars$Data<-Base@cpars$Data
+OM@cpars$AddIbeta <-Base@cpars$AddIbeta
+print(OM@cpars$Perr_y[1,1:10])
+OM@seed<-seed
+Hist<-runMSE(OM,Hist=T,extended=T)
+for(jj in 1:27)Hist@SampPars$Obs$AddInd_Stat[[jj]][,2]<-Hist@SampPars$Obs$AddInd_Stat[[jj]][,2]/2 # test of info in reduced CV
+MSE<-Project(Hist,MPs=simMPs[MP],extended=T)
+saveRDS(MSE,paste0("C:/temp/MSEs4/Run_",i,"_",MP,".rda"))
+#print(paste("i =",i,"  MP =",MP))
+}
+length(inds)
+nrow(inds)
+setup()
+sfLibrary(wham)
+sfExport(list=list("FMP","F_hi","F_med","F_low","F_hi_v","F_med_v","F_low_v"))
+iss<-(1:nrow(inds))#[inds[,1]>60]
+sfSapply(iss,parrun,inds=inds,obj=obj,simMPs=simMPs,Base=Base)
+files<-list.files("C:/temp/MSEs4/")
+nis<-sapply(files,function(x)strsplit(x,split="_")[[1]][2])
+MPss<-sapply(files,function(x)substr(strsplit(x,split="_")[[1]][3],1,1))
+fcode<-paste(nis,MPss,sep="_")
+icode<-paste(as.character(inds[,1]),as.character(inds[,2]),sep="_")
+keep<-!(icode%in%fcode)
+inds<-inds[keep,]
+nrow(inds)
+iss<-(1:nrow(inds))#[inds[,1]>60]
+sfSapply(iss,parrun,inds=inds,obj=obj,simMPs=simMPs,Base=Base)
+sfStop()
+sfStop()

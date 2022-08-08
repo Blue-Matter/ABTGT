@@ -1,26 +1,26 @@
 {
-    "id": "BD1FAAC1",
-    "path": "G:/Shared drives/BM shared/1. Projects/Bluefin_Gene_Tag/Methods/Dev_code_2.R",
+    "id": "4849CFD7",
+    "path": "~/GitHub/AI-MP-EGB/1_Specify_Operating_Models.R",
     "project_path": null,
     "type": "r_source",
     "hash": "0",
     "contents": "",
     "dirty": false,
-    "created": 1654794874963.0,
+    "created": 1659067996993.0,
     "source_on_save": false,
-    "relative_order": 4,
+    "relative_order": 1,
     "properties": {
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "14,19",
+        "cursorPosition": "163,0",
         "scrollLine": "0"
     },
     "folds": "",
-    "lastKnownWriteTime": 1654710746,
+    "lastKnownWriteTime": 1659131865,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1654710746,
+    "last_content_update": 1659131865,
     "read_only": false,
     "read_only_alternatives": []
 }
