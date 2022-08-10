@@ -1,26 +1,26 @@
 {
-    "id": "99267833",
-    "path": "~/GitHub/AI-MP-EGB/2_Run_Simulations.R",
+    "id": "4EFEFEFE",
+    "path": "C:/Users/tcarruth/Dropbox/abft-mse/R_package/ABTMSE/R/MSE_Object.R",
     "project_path": null,
     "type": "r_source",
-    "hash": "2985521067",
+    "hash": "0",
     "contents": "",
     "dirty": false,
-    "created": 1659068543404.0,
+    "created": 1660077925686.0,
     "source_on_save": false,
-    "relative_order": 2,
+    "relative_order": 5,
     "properties": {
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "73,34",
-        "scrollLine": "61"
+        "cursorPosition": "1448,14",
+        "scrollLine": "1427"
     },
     "folds": "",
-    "lastKnownWriteTime": 1659134077,
+    "lastKnownWriteTime": 1651012451,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1659134077654,
+    "last_content_update": 1651012451,
     "read_only": false,
     "read_only_alternatives": []
 }

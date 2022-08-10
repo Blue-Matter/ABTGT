@@ -1,0 +1,125 @@
+
+dotest<-function(){
+
+  test<-new('MSE',OM_1t,returnPPD=T)
+  dset<-test@PPD[[2]] # take the U5 projection results
+
+  dset[[1]]$Iobs<-dset[[1]]$Iobs[,,1:59]
+
+
+  x=1; AS=1; Balpha=0; Bbeta=1; Falpha=1; Fbeta=0.33; i1CR=c(5,6); i1SUV=c(2,4); i2CR=c(10,13); i2SUV=3
+  theta=matrix(c(0.95,0.1,0.05,0.9),nrow=2); BMSYE=550; BMSYW=15; FMSYE=0.07; FMSYW=0.02
+  BE=650; BW=15; BEa=500; BWa=70; maxDown=0.2; maxUp=0.2;mindelta=0; minETAC=0; minWTAC=0
+  maxETAC=55; maxWTAC=10; maxWTACnear=10; wTACnear=10; enp.mult=0.15; lmE=1;lmW=2; lastyrs=c(53:54)
+
+}
+
+MPx<-function(x, dset, AS, Balpha=0, Bbeta=1, Falpha=1,
+              Fbeta=0.33, i1CR=c(5,6), i1SUV=c(2,4), i2CR=c(10,13), i2SUV=3,
+              theta=matrix(c(0.95,0.1,0.05,0.9), nrow=2),
+              BMSYE=550, BMSYW=15, FMSYE=0.07, FMSYW=0.02,
+              BE=650, BW=15, BEa=500, BWa=70,
+              maxDown=0.3, maxUp=0.2, mindelta=0,
+              minETAC=0, minWTAC=0,
+              maxETAC=100, maxWTAC=20,
+              maxWTACnear=10, wTACnear=10,
+              enp.mult=0.15, lmE=1, lmW=2,
+              lastyrs=c(53:54)){
+
+  smooth<-function(xx,plot=F,enp.mult,plotname=""){
+    tofill<-!is.na(xx)
+    xx[xx==0]<-1E3
+    predout<-rep(NA,length(xx))
+    dat<-data.frame(x=1:length(xx),y=log(xx))
+    enp.target<-sum(tofill)*enp.mult
+    out<-loess(y~x,dat=dat,enp.target=enp.target)
+    predout[tofill]<-exp(predict(out))
+    if(plot){
+      plot(xx,type="p",xlab="x",ylab="y",main=plotname)
+      lines(predout,col="#ff000090",lwd=2)
+    }
+    predout
+  }
+
+  thisyr<-length(dset[[1]]$Iobs[x,1,])
+  Iobs<-dset[[1]]$Iobs[x,,]
+  Iobs<-t(apply(Iobs,1,smooth,plot=F,plotname=x,enp.mult=enp.mult)) # Iobs2<-Iobs/Iobs[,52]; matplot(t(Iobs2),type='l')
+
+  # replicate previous observation if missing
+  fill<-is.na(Iobs[,thisyr])
+  Iobs[fill,thisyr]<-Iobs[fill,thisyr-1]
+
+  q1SUV=BE/apply(Iobs[i1SUV,lastyrs],1,mean,na.rm=T)
+  q2SUV=BW/apply(Iobs[i2SUV,lastyrs,drop=F],1,mean, na.rm=T)
+  q1CR=BEa/apply(Iobs[i1CR,lastyrs],1,mean,na.rm=T)
+  q2CR=BWa/apply(Iobs[i2CR,lastyrs],1,mean,na.rm=T)
+
+  BSUVE<-mean(Iobs[i1SUV,thisyr]*q1SUV)*theta[1,1]+
+    mean(Iobs[i2SUV,thisyr]*q2SUV)*theta[2,1]
+
+  BSUVW<-mean(Iobs[i1SUV,thisyr]*q1SUV)*theta[1,2]+
+    mean(Iobs[i2SUV,thisyr]*q2SUV)*theta[2,2]
+
+  BCRE<-mean(Iobs[i1CR,thisyr]*q1CR)
+  BCRW<-mean(Iobs[i2CR,thisyr]*q2CR)
+
+  lastTACyr<-length(dset[[1]]$TAC[x,])-1
+  ETAC<-dset[[1]]$TAC[x,lastTACyr]/1E6
+  WTAC<-dset[[2]]$TAC[x,lastTACyr]/1E6
+
+  FSUVE<--log(1-ETAC/(ETAC+BSUVE))
+  FSUVW<--log(1-WTAC/(WTAC+BSUVW))
+  FCRE<--log(1-ETAC/(ETAC+BCRE))
+  FCRW<--log(1-WTAC/(WTAC+BCRW))
+
+  ETAC<-dset[[1]]$TAC[x,lastTACyr]
+  WTAC<-dset[[2]]$TAC[x,lastTACyr]
+
+  powdif<-function(x,z,g){
+    x2<-(g*(((x)^2)^0.5))^z
+    x2[x<0]<-(-x2[x<0])
+    x2
+  }
+
+  dBE=exp(1/2*(log(BSUVE/BMSYE)+log(BCRE/BMSYE)))
+  dBW=exp(1/2*(log(BSUVW/BMSYW)+log(BCRW/BMSYW)))
+
+  dFE=exp(1/2*(log(FSUVE/FMSYE)+log(FCRE/FMSYE)))
+  dFW=exp(1/2*(log(FSUVW/FMSYW)+log(FCRW/FMSYW)))
+
+  if(AS==1){
+    Frel<-dFE
+    Brel<-dBE
+    TAC<-ETAC
+    maxTAC<-maxETAC*1E6
+    minTAC<-minETAC*1E6
+
+  }else{
+    Frel=dFW
+    Brel=dBW
+    TAC=WTAC
+    if(thisyr<(56+wTACnear)){
+      maxTAC=maxWTACnear*1E6
+    }else{
+      maxTAC<-maxWTAC*1E6
+    }
+    minTAC<-minWTAC*1E6
+  }
+
+  Fresp<-exp(log(1/Frel)*Fbeta)
+  Bresp<-exp(powdif(Brel-1,Bbeta,Balpha))
+  TACadj2<-Falpha*Bresp*Fresp
+
+  if(thisyr<59){ # TAC update 1 is 57, update 2 is 59 - just one fixed update in the 3-year
+    if(TACadj2>(1+maxUp))TACadj2=(1+maxUp)
+    if(TACadj2<0.9)TACadj2=0.9  # this is changed
+    if(TACadj2>(1-mindelta)&TACadj2<(1+mindelta))TACadj2=1
+  }else{
+    if(TACadj2>(1+maxUp))TACadj2=(1+maxUp)
+    if(TACadj2<(1-maxDown))TACadj2=(1-maxDown)
+    if(TACadj2>(1-mindelta)&TACadj2<(1+mindelta))TACadj2=1
+  }
+  max(minTAC,min(TACadj2*TAC,maxTAC))
+
+}
+

@@ -1,0 +1,38 @@
+# Test of estimation ability
+
+library(ABTMSE)
+library(ABTGT)
+loadABT()
+
+setwd("G:/Shared drives/BM shared/1. Projects/Bluefin_Gene_Tag")
+source("./Methods/Source/UMSY MPs.R") # loads MPs
+
+OMs<-list.files("./OMs",full.names = T)
+nOM <- length(OMs)
+
+TDnam <- c("Rel. to catches", "More Uniform","Uniform","Rel. to F", "Conv. Tag","E. Tag")
+TDs  <-  c("Rel_cat_2019",    "Default",     "Uniform","Rel_F_2019","Conv_Tag", "E_Tag")
+nTD<-length(TDs)
+
+tagnos<-c(100,200,500,1000,2000)
+ntn<-length(tagnos)
+
+for(tt in 1:nTD){
+  for(oo in 1:nOM){
+    for(tn in 1:ntn){
+
+      TD<-get(TDs[tt])
+      OM<-readRDS(OMs[oo])
+      OM<-OM_1t
+      GT <- make_GT(OM,nT=tagnos[tn],RD=TDs[tt])
+      obj<-new('MSE_GT',OM,MPs,GT=GT)
+      saveRDS(obj,paste0("./MSEs/Estimation/",tt,"_",oo,"_",tn))
+
+    }
+  }
+}
+
+
+
+
+

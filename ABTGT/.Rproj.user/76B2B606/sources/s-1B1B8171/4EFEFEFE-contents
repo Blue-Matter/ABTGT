@@ -90,9 +90,9 @@
 #' \item{Fleet_cat}{an array of fleet catches [nsim x MP x fleet x year ]}
 #' \item{TACtaken}{an array of TAC actually taken nsim x MP x NAss x proyear}
 #' \item{MPs}{a list object containing the names of the MPs [nMPs]}
-#' \item{PPD}{a list object of posterior predicted data [nMPs]}
+#' \item{PPD}{a two-tiered hierarchical list object containing the posterior predicted dataset [[MP]][[Stock]]}
 #' }
-setClass("MSE_GT",representation(
+setClass("MSE",representation(
 
   # Description
   Name="character",Date="character",Author="character",
@@ -167,23 +167,20 @@ setClass("MSE_GT",representation(
   Fleet_comp="array",
   Fleet_cat="array",
   TACtaken="array",
-  GT="list",
 
   MPs="list",
   PPD="list"
 
 ))
 
-setMethod("initialize", "MSE_GT", function(.Object,OM=OM_example,MPs=list(c("U5","U5")),
-                                           TAC2019=c(31133978,2305585),TAC2020=c(35032314,2269362),
-                                           TAC2021=c(36000000,2350000),TAC2022=c(36000000,2726000),
-                                           Allocation=ABTMSE:::Allocation,MPareas=NA,Fdistyrs=3,maxTAC=c(10,10),MSEparallel=F,
-                                        check=FALSE,Reallocate=TRUE,GT=NULL){
+setMethod("initialize", "MSE", function(.Object,OM=OM_example,MPs=list(c("U5","U5")),
+                                        TAC2019=c(31133978,2305585),TAC2020=c(35032314,2269362),
+                                        TAC2021=c(36000000,2350000),TAC2022=c(36000000,2726000),
+                                        Allocation=ABTMSE:::Allocation,MPareas=NA,Fdistyrs=3,maxTAC=c(10,10),MSEparallel=F,
+                                        check=FALSE,Reallocate=TRUE,returnPPD=FALSE){
 
   # .Object}); .Object<-new('MSE');
   .Object@Snames<-OM@Snames
-
-  if(is.null(GT))stop("No Gene tagging specifications 'GT' added to this run")  # are Gene tagging calculations to be carried out?
 
   IE<-OM@IE
   Obs<-get(OM@Obs)
@@ -211,9 +208,6 @@ setMethod("initialize", "MSE_GT", function(.Object,OM=OM_example,MPs=list(c("U5"
   }
 
   MPsa<-append(list(c("ZeroC","ZeroC")),MPs) # make sure a zeroC reference MP is included
-
-
-
 
   # copy over dimensions ------
   dimslots<-slotNames(OM)[1:18]
@@ -357,6 +351,7 @@ setMethod("initialize", "MSE_GT", function(.Object,OM=OM_example,MPs=list(c("U5"
   histyrs<-list() # historical years of the index
   resyrs<-list()  # stochastic residual years
   sid<-MPQ<-MParea<-newq<-rep(NA,nind) # the correct index of the Istats and Ires slots in the OM object
+  NAyrs<-list()
   VB_index<-rep(F,nind)
   MPFleet<-rep(NA,nind)
   VN_index<-rep(F,nind)
@@ -694,7 +689,9 @@ setMethod("initialize", "MSE_GT", function(.Object,OM=OM_example,MPs=list(c("U5"
   VBi<-array(0,c(nsim,nyears+proyears,nind)) # vulnerable biomass by index
   for(i in 1:nind){
 
-    idd<-subset(Obs@MPind,Obs@MPind$No==i & Obs@MPind$Year<=(OM@nyears+3)) # include up to 2019 observations
+    idd0<-subset(Obs@MPind,Obs@MPind$No==i & Obs@MPind$Year<=(OM@nyears+3)) # include up to 2019 observations
+    NAyrs[[i]]<-idd0$Year[is.na(idd0$Index)]
+    idd<-idd0[!is.na(idd0$Index),]
     MPQ[i]<-idd$Quarter[1]
     MParea[i]<-idd$Areas[1]
     sid[i]<-match(idd$Name[1],OM@Istats[,1]) #
@@ -949,7 +946,7 @@ setMethod("initialize", "MSE_GT", function(.Object,OM=OM_example,MPs=list(c("U5"
 
   dynB0h<-array(NA,c(nsim,npop,nyears))
   dynB0<-array(NA,c(nsim,npop,proyears))
-
+  alldyn<-array(NA,c(nsim,npop,nyears+proyears))
   for(pp in 1:npop){
 
     R0<-OM@hR0[,pp,1]
@@ -975,7 +972,8 @@ setMethod("initialize", "MSE_GT", function(.Object,OM=OM_example,MPs=list(c("U5"
     }
 
   }
-
+  alldyn[,,1:nyears]<-dynB0h
+  alldyn[,,nyears+1:proyears]<-dynB0
   .Object@dynB0<-dynB0
   .Object@dynB0h<-dynB0h
 
@@ -1006,7 +1004,7 @@ setMethod("initialize", "MSE_GT", function(.Object,OM=OM_example,MPs=list(c("U5"
     CobsCV[,AS]<-apply(apply(Ctemp[,,Assess_data[AS,]],1:2,sum)/Cobs_hist[,AS,],1,sd)
   }
 
-  #  1   2  3   4   5         6
+  #  1   2   3   4   5          6
   # Name lnq sd AC1 Ilencat_LB Ilencat_UB
   Iobs<-Isim[,,1:nyears,1]#Itemp1/array(apply(Itemp2,1:2,mean,na.rm=T),dim(Itemp2))                # normalize to mean 1 post residual error
 
@@ -1058,13 +1056,15 @@ setMethod("initialize", "MSE_GT", function(.Object,OM=OM_example,MPs=list(c("U5"
   .Object@Fleet_comp<-array(NA,c(nsim,nMPs,nfleets,allyears,nages))
   .Object@Fleet_cat<-array(NA,c(nsim,nMPs,nfleets,allyears))
 
+  if(returnPPD)PPD=list()
+
 
   # =========================================================================================================================================================================
 
   # =========================================================================================================================================================================
 
   for(MP in 1:nMPs){
-    GT_MP<-GT
+
     set.seed(OM@seed)
 
     cat(paste0(paste0(MP,"/",nMPs," Running MSE for: "),paste0(MPsa[[MP]]," (",.Object@Snames,")",collapse="  ")))  # print a progress report
@@ -1111,7 +1111,12 @@ setMethod("initialize", "MSE_GT", function(.Object,OM=OM_example,MPs=list(c("U5"
         Iobs[,,1:nyears]<-Isim[,,1:nyears,1] # real observations
         iInd<-as.matrix(expand.grid(1:nsim,1:nind,(nyears+1):(y-1),2)) # updates
         Iobs[iInd[,c(1,2,3)]]<-exp(log(VBi[iInd[,c(1,3,2)]]*newq[iInd[,2]])+Isim[cbind(iInd[,1:3],rep(2,nrow(iInd)))])*rep(qmult,each=nsim*nind)
+        if(OM@Obs=="Hyperstable"){
+          calib<-Iobs[,,upyrs[1]-1]/(Iobs[,,upyrs[1]-1]^.Object@Ibeta) # calibration is 2022 data point
+          Iobs[iInd[,1:3]]<-(Iobs[iInd[,1:3]]^.Object@Ibeta[iInd[,1]])*calib[iInd[,1:2]] # rescale by 2022
+        }
 
+        for(i in 1:nind)Iobs[,i,NAyrs[[i]]]<-NA
         # if additional data are required
         if(y==nyears+MPlag){
           nuy<-nyears+1
@@ -1131,10 +1136,8 @@ setMethod("initialize", "MSE_GT", function(.Object,OM=OM_example,MPs=list(c("U5"
           if(length(upind)>0){
             Cobs[,upind]<-apply(array(C[,,,upind,,AA,],c(nsim,npop,nages,length(upind),nsubyears,nA,nfleets))*array(Wt_age[,,,nyears],c(nsim,npop,nages,length(upind),nsubyears,nA,nfleets)),c(1,4),sum,na.rm=T)*.Object@Cerr[,upind]
           }
-          upind<-(nyears+1):(y-1)
-          if(length(upind)>0){
-            CN<-apply(array(C[,,,upind,,AA,],c(nsim,npop,nages,length(upind),nsubyears,nA,nfleets)),c(1,4),sum,na.rm=T)*.Object@Cerr[,upind]
-          }
+
+
           dset[[AS]]<-list("Cobs"=cbind(Cobs,.Object@TAC[,MP,AS,y-nyears-1]),
                            "Iobs"=Iobs[,,1:(y-2)],
                            "K"=OM@Kmu[,AS]*.Object@Kb,        # for now these assume same growth by stock
@@ -1152,17 +1155,18 @@ setMethod("initialize", "MSE_GT", function(.Object,OM=OM_example,MPs=list(c("U5"
                                            array(Wt_age[,,,nyears],c(nsim,npop,nages,y-1,nA)),c(1,4),sum,na.rm=T),
                            "VBty_PI"=apply(N[,,4:nages,1:(y-1),nsubyears,AA]*
                                            array(Wt_age[,,4:nages,nyears],c(nsim,npop,nages-3,y-1,nA)),c(1,4),sum,na.rm=T),
+                           #N[,pp,nages,y,m,]
+                           # dynB0[,pp,y]
+                           "Dep_PI"=apply(
+                                           N[,AS,,1:(y-1),nsubyears,]*
+                                           array(mat[,AS,,nyears]*Wt_age[,AS,,nyears],c(nsim,nages,y-1,nareas)),
+                                        c(1,3),sum,na.rm=T)/ # simulation year
+                                        (alldyn[,AS,1:(y-1)]*array(.Object@SSBMSY_SSB0[,AS],c(nsim,y-1))),#simulation year
+                           "UMSY_PI"=.Object@UMSY[,AS], # sim, AS
                            "MPrec"=TAC[,AS],
                            "TAC"=matrix(.Object@TAC[,MP,AS,1:(y-nyears)],ncol=(y-nyears),nrow=nsim),
-                           "curTAC"=rep(TAC2020[AS],nsim),
-                           "TH"=GT_MP$TH,
-                           "TAL"=GT_MP$TAL,
-                           "Tarea"=GT_MP$Tarea,
-                           "Tage"=GT_MP$Tage,
-                           "N"=N,
-                           "CN"=CN
-
-                           )
+                           "curTAC"=rep(TAC2020[AS],nsim)
+                                                   )
         } # end of assessment area
 
         TACtrial<-array(NA,c(nsim,nAss))
@@ -1305,11 +1309,6 @@ setMethod("initialize", "MSE_GT", function(.Object,OM=OM_example,MPs=list(c("U5"
         Ftot<-apply(FM[,,,y,m,,],1:4,sum,na.rm=T)
         Z[SPAYMR]<-Ftot[SPAR]+M[SPAY]/nsubyears
 
-        GT_MP<-calc_GT(GT=GT_MP,y=y, m=m, N=N, FM=FM, M=M, mov=mov,
-                             nsubyears=nsubyears, movIndex=movIndex, nsim=nsim,
-                             nages=nages,npop=npop,nyears=nyears,nareas=nareas,
-                             nfleets=nfleets)
-
         for(pp in 1:npop){
 
           SSB[,pp,,y,m,]<-N[,pp,,y-1,m,]*array(Wt_age[,pp,,nyears]*mat[,pp,,nyears],dim=c(nsim,nages,nareas))
@@ -1346,7 +1345,6 @@ setMethod("initialize", "MSE_GT", function(.Object,OM=OM_example,MPs=list(c("U5"
             }
 
           } # if its the right subyear
-
 
         } # end of pop
 
@@ -1424,14 +1422,15 @@ setMethod("initialize", "MSE_GT", function(.Object,OM=OM_example,MPs=list(c("U5"
     .Object@B_BMSY[MP,,,1:nyears]<-SSB2[,,1:nyears]/(dynB0h*array(.Object@SSBMSY_SSB0,c(nsim,npop,nyears)))
     .Object@B_BMSY[MP,,,nyears+1:proyears]<-SSB2[,,nyears+1:proyears]/(dynB0*array(.Object@SSBMSY_SSB0,c(nsim,npop,proyears)))
 
-    U<-.Object@CW[MP,,,]/(.Object@CW[MP,,,]+B)
-    .Object@F_FMSY[MP,,,]<-U/apply(array(OM@UMSY[,],c(nsim,npop)),1,mean)
+    U<-.Object@CW[MP,,,]/B
+    .Object@F_FMSY[MP,,,]<-U/array(OM@UMSY,dim(U)) # sim, pop, allyears
 
     .Object@VBi[MP,,,]<-aperm(VBi*rep(newq,each=nsim*allyears),c(1,3,2))
     .Object@Iobs[MP,,,1:dim(Iobs)[3]]<-Iobs # this can be irregular in year length due to upyrs
 
     cat("\n")
     MPdset[[MP]]<-dset # dataset by MP
+    if(returnPPD)PPD[[MP]]=dset
   } # end of MP
 
   assign("MPdset",MPdset,envir=globalenv()) # debugging
@@ -1445,9 +1444,9 @@ setMethod("initialize", "MSE_GT", function(.Object,OM=OM_example,MPs=list(c("U5"
   .Object@SSB_proj<-SSB_proj
   .Object@Rec_mu<-Rec_mu
   .Object@Rec_err<-Rec_err
-  .Object@PPD <- MPdset
 
   .Object@MPs<-MPsa
+  if(returnPPD).Object@PPD<-PPD
   .Object@area_defs<-OM@area_defs
   .Object@areanams<-OM@areanams
   invisible(gc()) # garbage collection is automatic in R, I'm doing this mannual to test memory requirements for computers with less RAM

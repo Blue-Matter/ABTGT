@@ -1,0 +1,208 @@
+# === MPx development =================================================================================================================
+
+# 2yr +20 / -30 first two intervals PGK
+
+library(ABTMSE)
+packageVersion('ABTMSE')
+loadABT()
+
+setwd("C:/Users/tcarruth/Dropbox/")
+setwd("C:/Users/tcar_/Dropbox/")
+
+source(paste0(getwd(),"/BFT MSE/MSMP10_30_10_3/MPx2021_refine10_30_10_3.R")) # load MPx
+
+setwd(paste0(getwd(),"/abft-mse"))
+
+
+# === Functions
+
+
+doint_parallel<-function(pars,par10=NULL){
+
+  assign("par1", pars[1], envir=globalenv())
+  assign("par2", pars[2], envir=globalenv())
+  assign("par3", pars[3], envir=globalenv())
+  assign("par4", pars[4], envir=globalenv())
+  assign("par5", pars[5], envir=globalenv())
+  assign("par6", pars[6], envir=globalenv())
+  assign("par7", pars[7], envir=globalenv())
+  assign("par8", pars[8], envir=globalenv())
+  assign("par9", pars[9], envir=globalenv())
+
+  assign("par10", par10, envir=globalenv())
+
+  EBa<-WBa<-array(NA,c(length(OMs),3))
+
+
+  sfExport(list=list("OMs","Good_Obs","MPx_opt1","MPx_opt2","MPx_opt3","MPx_opt4","MPx_opt5","MPx_opt6","MPx_opt7","MPx_opt8","MPx_opt9","Ann_Cat","MPx",
+                     "par1","par2","par3","par4","par5","par6","par7","par8","par9","par10"))
+  sfLibrary("ABTMSE", character.only = TRUE, verbose = FALSE)
+
+  MSEfunc<- function(i) { new('MSE', OM=get(OMs[i]),
+                              MPs=list(c('MPx_opt1','MPx_opt1'),c('MPx_opt2','MPx_opt2'),c('MPx_opt3','MPx_opt3'),
+                                       c('MPx_opt4','MPx_opt4'),c('MPx_opt5','MPx_opt5'),c('MPx_opt6','MPx_opt6'),
+                                       c('MPx_opt7','MPx_opt7'),c('MPx_opt8','MPx_opt8'),c('MPx_opt9','MPx_opt9')))
+  }
+
+  MSElist<-sfSapply(1:length(OMs),MSEfunc)
+  MSElist
+
+}
+
+
+
+
+# === For tuning to ! EAST ! Br30 ======================================================================================================
+
+MPx_opt1<-function(x, dset, AS)  MPx(x, dset, AS,  FMSYE=par1, FMSYW=par10)
+class(MPx_opt1)<-"MSMP"
+
+MPx_opt2<-function(x, dset, AS)  MPx(x, dset, AS,  FMSYE=par2, FMSYW=par10)
+class(MPx_opt2)<-"MSMP"
+
+MPx_opt3<-function(x, dset, AS)  MPx(x, dset, AS,  FMSYE=par3, FMSYW=par10)
+class(MPx_opt3)<-"MSMP"
+
+MPx_opt4<-function(x, dset, AS)  MPx(x, dset, AS,  FMSYE=par4, FMSYW=par10)
+class(MPx_opt4)<-"MSMP"
+
+MPx_opt5<-function(x, dset, AS)  MPx(x, dset, AS,  FMSYE=par5, FMSYW=par10)
+class(MPx_opt5)<-"MSMP"
+
+MPx_opt6<-function(x, dset, AS)  MPx(x, dset, AS,  FMSYE=par6, FMSYW=par10)
+class(MPx_opt6)<-"MSMP"
+
+MPx_opt7<-function(x, dset, AS)  MPx(x, dset, AS,  FMSYE=par7, FMSYW=par10)
+class(MPx_opt7)<-"MSMP"
+
+MPx_opt8<-function(x, dset, AS)  MPx(x, dset, AS,  FMSYE=par8, FMSYW=par10)
+class(MPx_opt8)<-"MSMP"
+
+MPx_opt9<-function(x, dset, AS)  MPx(x, dset, AS,  FMSYE=par9, FMSYW=par10)
+class(MPx_opt9)<-"MSMP"
+
+
+# test2<- new('MSE', OM=OM_1t, MPs=list(c('MPx_opt1','MPx_opt1')))
+
+
+OMs<-paste0("OM_",1:48,"t")
+pars<-seq(0.05,0.075,length.out=9) # West
+
+sfInit(parallel=T,cpus=8)
+sfExport(list=as.list(OMs))
+
+system.time({MSElist<-doint_parallel(pars,par10=0.038)})
+
+
+
+#out<-Br30_Wt(MSElist)
+out<-PGK_Wt(MSElist)
+
+EB<-out$Eastern[2:10]
+WB<-out$Western[2:10]
+
+Epar<-pars
+EBr30<-EB
+
+plot(Epar,EBr30,pch=19,xlim=range(pars),ylim=c(0.3,0.9))
+for(lev in c(0.6,0.7)){
+  #val<-optimize(getBr30,c(0.01,0.325),targ=lev)$minimum
+  val<-approx(EBr30,Epar,lev)
+  print(val)
+  abline(v=val,col='red')
+  abline(h=lev,col='red')
+}
+
+
+# === Tunings for East first ===========================================================================================================
+
+
+E60 <- 0.06760417 # 1.5 E Br30 pars[1]+0.9*(pars[2]-pars[1])
+E70 <- 0.0553125 # 1.25
+
+
+
+# === For tuning to ! WEST ! Br30 ======================================================================================================
+
+MPx_opt1<-function(x, dset, AS)  MPx(x, dset, AS,  FMSYW=par1, FMSYE=par10)
+class(MPx_opt1)<-"MSMP"
+
+MPx_opt2<-function(x, dset, AS)  MPx(x, dset, AS,  FMSYW=par2, FMSYE=par10)
+class(MPx_opt2)<-"MSMP"
+
+MPx_opt3<-function(x, dset, AS)  MPx(x, dset, AS,  FMSYW=par3, FMSYE=par10)
+class(MPx_opt3)<-"MSMP"
+
+MPx_opt4<-function(x, dset, AS)  MPx(x, dset, AS,  FMSYW=par4, FMSYE=par10)
+class(MPx_opt4)<-"MSMP"
+
+MPx_opt5<-function(x, dset, AS)  MPx(x, dset, AS,  FMSYW=par5, FMSYE=par10)
+class(MPx_opt5)<-"MSMP"
+
+MPx_opt6<-function(x, dset, AS)  MPx(x, dset, AS,  FMSYW=par6, FMSYE=par10)
+class(MPx_opt6)<-"MSMP"
+
+MPx_opt7<-function(x, dset, AS)  MPx(x, dset, AS,  FMSYW=par7, FMSYE=par10)
+class(MPx_opt7)<-"MSMP"
+
+MPx_opt8<-function(x, dset, AS)  MPx(x, dset, AS,  FMSYW=par8, FMSYE=par10)
+class(MPx_opt8)<-"MSMP"
+
+MPx_opt9<-function(x, dset, AS)  MPx(x, dset, AS,  FMSYW=par9, FMSYE=par10)
+class(MPx_opt9)<-"MSMP"
+
+OMs<-paste0("OM_",1:48,"t")
+
+sfInit(parallel=T,cpus=8)
+sfExport(list=as.list(OMs))
+
+# E Br30 = 1.25 ----------------------------------------------------------------
+
+pars<-seq(0.025,0.048,length.out=9) # West
+system.time({MSElist<-doint_parallel(pars,par10=E60)}) # Set par10
+
+out<-PGK_Wt(MSElist)
+
+EB<-out$Eastern[2:10]
+WB<-out$Western[2:10]
+
+Wpar<-pars
+WBr30<-WB
+plot(Wpar,WBr30,pch=19,xlim=range(pars))
+lines(Wpar,WBr30,col='blue')
+for(lev in c(0.6)){
+  val<-approx(WBr30,Wpar,lev)
+  print(val)
+  abline(v=val,col='red')
+  abline(h=lev,col='red')
+}
+
+MP5tune<-c(0.04455,0.06760417) # 60 60 # did this previously (may be improved)
+
+
+# E Br30 = 1.50 ----------------------------------------------------------------
+
+pars<-seq(0.025,0.048,length.out=9)
+system.time({MSElist<-doint_parallel(pars,par10=E70)}) # Set par10
+
+out<-PGK_Wt(MSElist)
+
+EB<-out$Eastern[2:10]
+WB<-out$Western[2:10]
+
+Wpar<-pars
+WBr30<-WB
+plot(Wpar,WBr30,pch=19,xlim=range(pars),ylim=c(0.4,1))
+lines(Wpar,WBr30,col='blue')
+for(lev in c(0.7)){
+  val<-approx(WBr30,Wpar,lev)
+  print(val)
+  abline(v=val,col='red')
+  abline(h=lev,col='red')
+}
+
+MP6tune<-c(0.03733056,0.0553125)    # 70 70
+
+
+
+

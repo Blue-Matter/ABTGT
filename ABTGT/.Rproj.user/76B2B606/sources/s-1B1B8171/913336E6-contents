@@ -1,0 +1,29 @@
+
+# Development code for ABTGT
+library(PerformanceAnalytics)
+library(mc2d) # for vectorized  array-based rmultinom
+library(ABTMSE)
+loadABT()
+
+setwd("C:/GitHub/ABTGT") # laptop
+setwd("C:/Users/tcarruth/Documents/GitHub/ABTGT") # workstation
+files<-list.files("./ABTGT/R/")
+files<-files[files!="Brownie"]
+for (fl in files) source(file.path("./ABTGT/R/", fl)) # load source code and formatted data
+
+OM<-OM_1t
+GT <- make_GT(OM,nT=5000,RD="Test")
+test<-new('MSE_GT',OM,list(c("U5","U5")),GT=GT)
+
+saveRDS(dset,"G:/Shared drives/BM shared/1. Projects/Bluefin_Gene_Tag/Methods/dset_1t.rda")
+
+mnpmat<-readRDS("C:/temp/mnpmat.rda")
+Tind<-readRDS("C:/temp/Tind.rda")
+GT<-readRDS("C:/temp/GT.rda")
+dims<-dim(GT$Rel)
+nsim<-dims[1]
+nfleets<-dims[2]
+nyears<-dims[3]
+nareas<-dims[5]
+npop<-dim(GT$TAL)[3]
+FGT<-readRDS("C:/temp/FGT.rda")
