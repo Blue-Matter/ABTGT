@@ -1,26 +1,26 @@
 {
-    "id": "B8DCDABB",
-    "path": "G:/Shared drives/BM shared/1. Projects/Bluefin_Gene_Tag/Methods/Dev_code_2.R",
+    "id": "BFA2B9A5",
+    "path": "G:/Shared drives/BM shared/1. Projects/Bluefin_Gene_Tag/Methods/Dev_code.R",
     "project_path": null,
     "type": "r_source",
     "hash": "0",
     "contents": "",
-    "dirty": true,
-    "created": 1654707524496.0,
+    "dirty": false,
+    "created": 1660149662684.0,
     "source_on_save": false,
-    "relative_order": 1,
+    "relative_order": 2,
     "properties": {
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "18,0",
-        "scrollLine": "0"
+        "cursorPosition": "267,0",
+        "scrollLine": "255"
     },
     "folds": "",
-    "lastKnownWriteTime": 1654710741,
+    "lastKnownWriteTime": 1660154538,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1654714302809,
+    "last_content_update": 1660154538541,
     "read_only": false,
     "read_only_alternatives": []
 }

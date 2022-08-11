@@ -1,0 +1,49 @@
+# Test of estimation ability
+
+library(ABTMSE)
+library(ABTGT)
+loadABT()
+
+setwd("G:/Shared drives/BM shared/1. Projects/Bluefin_Gene_Tag")
+source("./Methods/Source/UMSY MPs.R") # loads MPs
+
+OMs<-list.files("./OMs",full.names = T)
+nOM <- length(OMs)
+
+TDnam <- c("Rel. to catches", "More Uniform","Uniform","Rel. to F","Conv. Tag","E. Tag")
+TDs  <- c("Rel_cat_2019","Default","Uniform","Rel_F_2019","Conv_Tag","E_Tag")
+nTD<-length(TDs)
+
+tagnos<-c(100,200,500)*10
+ntn<-length(tagnos)
+
+st<-Sys.time()
+tm<-0
+tot<-nTD*nOM*ntn
+for(tt in 1:nTD){ # tt=1; oo=1; tn=1
+  for(oo in 1:nOM){
+    for(tn in 1:ntn){
+
+      tm<-tm+1
+      print(paste("----",tm, "/",tot,"  Tag design:", tt, "OM:",oo,"tagno:",tn," --------------------------------------------------"))
+
+      TD<-get(TDs[tt])
+      OM<-readRDS(OMs[oo])
+      #OM<-OM_1t
+      GT <- make_GT(OM,nT=tagnos[tn],RD=TDs[tt],ryrs=10)
+      GT$GTcheck=F
+      obj<-new('MSE_GT',OM,MPs,GT=GT)
+      saveRDS(obj,paste0("./MSEs/Estimation/MSE_",tt,"_",oo,"_",tn))
+
+      ct<-Sys.time()
+      est<-st+((ct-st)/tm)*tot
+      print(paste0(tm,"/",tot, " ", round(tm/tot*100,1),"% ETA:",est))
+
+    }
+  }
+}
+
+
+
+
+

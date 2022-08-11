@@ -94,7 +94,7 @@ Tcalc<-function(GT,RGT,FGT,NGT,nsim,nages,npop,nfleets,nareas,y,m,nyears){
     TALni<-Tindex_old[i]:Tindex[i] # this are the new tag numbers
     nTALy<-length(TALni)
     reltab<-cbind(TEG(c(nareas,npop,nages)),as.vector(rels2[i,,,])) # rels 2 is sim, area, pop, age
-    reltab<-reltab[reltab[,4]!=0,,drop=F] # remove unnecessary rows
+    reltab<-reltab[reltab[,4]!=0,] # remove unnecessary rows
     relind<-code_expand_decode(reltab) # area, popno, age # make an array of expanded indices
     # nrow(relind)==nTALy # check that expansion is right length
     TALind<-cbind(TALni,rep(i,nTALy),relind[,2],relind[,1]) # tagno, sim, pop, area
@@ -158,70 +158,69 @@ Tcalc<-function(GT,RGT,FGT,NGT,nsim,nages,npop,nfleets,nareas,y,m,nyears){
 FishCap<-function(GT,FGT,NGT,nsim,nages,npop,nfleets,nareas,y,m,nyears){
 
   TAL<-GT$TAL
-  TAL[TAL<1E-10]<-1E-10 # necessary or the multinomial sampling has to be done by simulation fleet area and that is too computationally intensive
+  TAL[TAL<1E-10]<-1E-10 # necessary or the multinomial sampling has to be done by silation fleet area and that is too computationally intensive
   TH<-GT$TH
   Tage<-GT$Tage
-  Tindex<-GT$Tindex # indexes the last tag released
+  Tindex<-GT$Tindex
   Tarea<-GT$Tarea
   Rel<-GT$Rel
   GTcheck <- GT$GTcheck
   GTdiags <- GT$GTdiags
-  #saveRDS(GT,"C:/temp/GT.rda")
-  #saveRDS(FGT,"C:/temp/FGT.rda")
+  saveRDS(GT,"C:/temp/GT.rda")
+  saveRDS(FGT,"C:/temp/FGT.rda")
   pharv<-1-exp(-FGT)# nsim,npop,nage,nareas,nfleet # harvest rate
 
 
   for(i in 1:nsim){
-    if(Tindex[i]>0){# only do this if at least one tag has been released already
-      Tind<-(1:Tindex[i])[apply(TAL[1:Tindex[i],i,,,drop=F],1,sum)>0]
-      nTi<-length(Tind)
-      prb<-array(0,c(nTi,nareas,nfleets)) # you need to get a probability of capturing a tag by area and fleet (given its pop and age is known)
-      Tpop<-apply(array(rep(1:npop,each=nTi),c(nTi,npop))*apply(array(TAL[Tind,i,,],c(nTi,npop,nareas)),1:2,sum),1,sum)
 
-      hind<-cbind(rep(i,nTi*npop*nareas*nfleets), # sim
-                  rep(Tpop,nareas*nfleets),  # pop
-                  rep(Tage[Tind,i],nareas*nfleets), #age
-                  rep(rep(1:nareas,each=nTi),nfleets), # areas
-                  rep(1:nfleets,each=nTi*nareas)) # fleet
+    Tind<-(1:Tindex[i])[apply(TAL[1:Tindex[i],i,,],1,sum)>0]
+    nTi<-length(Tind)
+    prb<-array(0,c(nTi,nareas,nfleets)) # you need to get a probability of capturing a tag by area and fleet (given its pop and age is known)
+    Tpop<-apply(array(rep(1:npop,each=nTi),c(nTi,npop))*apply(TAL[Tind,i,,],1:2,sum),1,sum)
 
-      TALind<-cbind(rep(Tind,nareas*nfleets),hind[,c(1,2,4)])
+    hind<-cbind(rep(i,nTi*npop*nareas*nfleets), # sim
+                rep(Tpop,nareas*nfleets),  # pop
+                rep(Tage[Tind,i],nareas*nfleets), #age
+                rep(rep(1:nareas,each=nTi),nfleets), # areas
+                rep(1:nfleets,each=nTi*nareas)) # fleet
 
-      mnpmat<-array(pharv[hind]*TAL[TALind],c(nTi,nareas*nfleets)) # prob is harvest rate x spatial distribution tagno,narea*fleet
+    TALind<-cbind(rep(Tind,nareas*nfleets),hind[,c(1,2,4)])
 
-      #condy<-mnpmat<0
-      #if(sum(condy)>0)print('negative mnpmat entry')
-      #mnpmat[condy]<-0
-      mnpmat[is.na(mnpmat)]<-0
-      #saveRDS(mnpmat,"C:/temp/mnpmat.rda")
-      #saveRDS(Tind,"C:/temp/Tind.rda")
-      if(!all(mnpmat==0)){
-        if(GTcheck)print("Start of FishCap multinomial")
-        wherewhom<-array(rmultinomial(nTi,rep(1,nTi),prob=mnpmat),c(nTi,nareas,nfleets)) # sum over fleets - no longer needed
-        # apply(wherewhom,1,sum) # check that only one tag can be caught over all areas and fleets
+    mnpmat<-array(pharv[hind]*TAL[TALind],c(nTi,nareas*nfleets)) # prob is harvest rate x spatial distribution tagno,narea*fleet
 
-        # now need to figure out whether it should be caught at all (based on total harvest rate)
-        is.caught<-(runif(nTi)<apply(mnpmat,1,sum))
-        if(any(is.caught)){
-          Tc<-(1:nTi)[is.caught]
-          nc<-length(Tc)
-          WWc<-wherewhom[is.caught,,,drop=F]
-          rmat<-array(rep(1:nareas,each=nc),dim(WWc))
-          fmat<-array(rep(1:nfleets,each=nc*nareas),dim(WWc))
-          rc<-apply(rmat*WWc,1,sum)
-          fc<-apply(fmat*WWc,1,sum)
-          pc<-as.numeric(Tpop[Tc])
+    #condy<-mnpmat<0
+    #if(sum(condy)>0)print('negative mnpmat entry')
+    #mnpmat[condy]<-0
+    mnpmat[is.na(mnpmat)]<-0
+    saveRDS(mnpmat,"C:/temp/mnpmat.rda")
+    saveRDS(Tind,"C:/temp/Tind.rda")
+    if(!all(mnpmat==0)){
+      if(GTcheck)print("Start of FishCap multinomial")
+      wherewhom<-array(rmultinomial(nTi,rep(1,nTi),prob=mnpmat),c(nTi,nareas,nfleets)) # sum over fleets - no longer needed
+      # apply(wherewhom,1,sum) # check that only one tag can be caught over all areas and fleets
 
-          TAL[Tc,i,,]<-0  # kill off tagged fish
-          THind<-as.matrix(cbind(Tc,rep(i,nc),pc,rep(y-nyears+1,nc),rep(m,nc)),ncol=5)
+      # now need to figure out whether it should be caught at all (based on total harvest rate)
+      is.caught<-(runif(nTi)<apply(mnpmat,1,sum))
+      if(any(is.caught)){
+        Tc<-(1:nTi)[is.caught]
+        nc<-length(Tc)
+        WWc<-wherewhom[is.caught,,,drop=F]
+        rmat<-array(rep(1:nareas,each=nc),dim(WWc))
+        fmat<-array(rep(1:nfleets,each=nc*nareas),dim(WWc))
+        rc<-apply(rmat*WWc,1,sum)
+        fc<-apply(fmat*WWc,1,sum)
+        pc<-as.numeric(Tpop[Tc])
 
-          for(k in 1:nrow(THind)){
-            TH[THind[k,1],THind[k,2],THind[k,3],THind[k,4],THind[k,5]] <- (-fc[k])
-            Tarea[THind[k,1],THind[k,2],2]<-rc[k]
-          }
-          #TH[THind] <- (-fc) # mysteriously not working
-        } # end of if caught
-      } # end of if there is a taggy left
-    }# End of only do operations if there is at least one tag released in this simulation
+        TAL[Tc,i,,]<-0  # kill off tagged fish
+        THind<-as.matrix(cbind(Tc,rep(i,nc),pc,rep(y-nyears+1,nc),rep(m,nc)),ncol=5)
+
+        for(k in 1:nrow(THind)){
+          TH[THind[k,1],THind[k,2],THind[k,3],THind[k,4],THind[k,5]] <- (-fc[k])
+          Tarea[THind[k,1],THind[k,2],2]<-rc[k]
+        }
+        #TH[THind] <- (-fc) # mysteriously not working
+      } # end of if caught
+    } # end of if there is a taggy left
   } # end of sim
 
   GT$TH=TH

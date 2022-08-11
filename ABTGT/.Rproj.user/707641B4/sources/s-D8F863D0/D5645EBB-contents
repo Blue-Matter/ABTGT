@@ -1,0 +1,57 @@
+
+
+U2<-function(x,dset,Urat=0.02)dset$Bt_PI[x]*Urat
+
+U4<-function(x,dset,Urat=0.04)dset$Bt_PI[x]*Urat
+
+U6<-function(x,dset,Urat=0.06)dset$Bt_PI[x]*Urat
+
+U8<-function(x,dset,Urat=0.08)dset$Bt_PI[x]*Urat
+
+U10<-function(x,dset,Urat=0.10)dset$Bt_PI[x]*Urat
+
+U12<-function(x,dset,Urat=0.12)dset$Bt_PI[x]*Urat
+
+U14<-function(x,dset,Urat=0.14)dset$Bt_PI[x]*Urat
+
+U16<-function(x,dset,Urat=0.16)dset$Bt_PI[x]*Urat
+
+U18<-function(x,dset,Urat=0.18)dset$Bt_PI[x]*Urat
+
+U20<-function(x,dset,Urat=0.20)dset$Bt_PI[x]*Urat
+
+
+class(U2)<-class(U4)<-class(U6)<-class(U8)<-class(U10)<-class(U12)<-class(U14)<-class(U16)<-class(U18)<-class(U20)<- "MP"
+
+MPs0<-list(c("U2","U2"),
+          c("U4","U4"),
+          c("U6","U6"),
+          c("U8","U8"),
+          c("U10","U10"),
+          c("U12","U12"),
+          c("U14","U14"),
+          c("U16","U16"),
+          c("U18","U18"),
+          c("U20","U20"))
+
+# list to reduce memory issues
+MPs2<-list(list(c("U2","U2"),
+                c("U4","U4"),
+                c("U6","U6")),
+
+           list(c("U8","U8"),
+                c("U10","U10"),
+                c("U12","U12")),
+
+           list(c("U14","U14"),
+                c("U16","U16"),
+                c("U18","U18"),
+                c("U20","U20")))
+
+
+MPs<-list(c("U2","U2"),
+          c("U4","U4"),
+          c("U6","U6"),
+          c("U8","U8"),
+          c("U10","U10"))
+
