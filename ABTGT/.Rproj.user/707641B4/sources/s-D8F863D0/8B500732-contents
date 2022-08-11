@@ -42,6 +42,7 @@ CPUEinds<-c("MOR_POR_TRAP","JPN_LL_NEAtl2","US_RR_66_114","US_RR_115_144","US_RR
 Iinds<-c("FR_AER_SUV2","MED_LAR_SUV","GOM_LAR_SUV","GBYP_AER_SUV_BAR")
 nsim<-50
 proyears<-24
+M<-0.125
 
 for(i in 1:nOMs){
 
@@ -53,12 +54,17 @@ for(i in 1:nOMs){
     OM<-new('OM',OMd=OMfolders[i],nsim=nsim,proyears=proyears,seed=1,MLEonly=T,Recruitment=Recs[[j]],
             SD_override=NULL, AC_override=NULL, Yrs_override=Yrs_override, CPUEinds=CPUEinds, Iinds=Iinds)
 
-    OM@seed<-OMnos[i*k+k]
+    OM@M[]<-M
+    OM@seed<-OMnos[i]*k+k
 
     saveRDS(OM,file=paste0('G:/Shared drives/BM shared/1. Projects/Bluefin_Gene_Tag/OMs/OM_',OMnos[i],"_",k,".rda"))
   }
 
 }
 
+# --- Constant M calcs ------
+#Ma<-OM@M[1,1,5:35,1]
+#Sa<-exp(-cumsum(Ma))
+#weighted.mean(Ma,Sa)
 
 
