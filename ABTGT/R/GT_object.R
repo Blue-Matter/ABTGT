@@ -7,8 +7,9 @@
 
 # Make a Genetic Tagging object of the right dimensions
 
-make_GT<-function(OM,nT=1000,seed=1,RD="Default",ryrs=10){
+make_GT<-function(OM,nT=1000,RD="Default",ryrs=10){
 
+  set.seed(OM@seed)
   npop <- OM@npop
   nyears <- OM@nyears
   proyears <- OM@proyears
@@ -23,7 +24,7 @@ make_GT<-function(OM,nT=1000,seed=1,RD="Default",ryrs=10){
 
   nstrata<-nfleets*ryrs*nsubyears*nareas
   #if(is.na(RD))RDmat=array(1/nstrata,c(nfleets,proyears+1,nsubyears,nareas))
-  RDmat<-get(RD)
+  RDmat<-get(RD)[,1:ryrs,,]
 
   for(i in 1:nsim){
     ind<-TEG(c(nfleets,ryrs,nsubyears,nareas))
