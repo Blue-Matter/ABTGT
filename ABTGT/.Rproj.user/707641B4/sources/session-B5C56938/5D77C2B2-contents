@@ -1,0 +1,253 @@
+library(ABTGT)
+library(ABTMSE)
+library(RColorBrewer)
+loadABT()
+
+setwd("G:/Shared drives/BM shared/1. Projects/Bluefin_Gene_Tag/")
+source("./Methods/Source/Fig Source.R")
+
+# --- Figure 1. Management areas and population areas --------------
+OMdirs<-paste0("C:/Users/tcar_/Dropbox/abft-mse/objects/OMs/",c(25, 31, 43))
+out<-M3read(OMdirs[1])
+
+jpeg("./Figures/Figure 1.jpg",res=600, units="in",height=8, width=10)
+
+  par(mfrow=c(2,2),mai=c(0.15,0.15,0.3,0.05),omi=c(0.6,0.6,0.05,0.05))
+  labcex<-0.9
+  load(paste0(OMdirs[1],"/OMI"))
+  .Object<-OMI
+  .Object@areanams<-c("G. Mex.","West Atl.","G. St Law.","South Atl.","North Atl.","East Atl.","Med.")
+  .Object@area_defs[[2]]$y[2]<-17
+
+  amed<-data.frame(x=c(-5,37,37,30,15,5,-5),
+                 y=c(30,30,40,40,50,50,40))
+  .Object@area_defs[[7]]<-amed
+
+  ax<-c(-70, -81,-86, .Object@area_defs[[2]]$x[2:21])
+  yx<-c(8,   8, 13, .Object@area_defs[[2]]$y[2:21])
+  .Object@area_defs[[2]]=data.frame(x=ax,y=yx)
+
+  xadj=c(0,0, 0,-12,-20,0,0)
+  yadj=c(0,-2,-1, 15,-2,-3,-4)
+  xlimy <- c(-95, 32)
+  ylimy <- c(-15, 65)
+  plot(xlimy, ylimy, col = "white", axes = F, xlab = "", ylab = "")
+  abline(v = (-18:18) * 10, col = "light grey", lwd = 0.8)
+  abline(h = (-18:18) * 10, col = "light grey", lwd = 0.8)
+  map(xlim = xlimy + c(-5, 5), ylim = ylimy + c(-5, 5), add = T,fill=T, border=NA,  col = "light grey")
+  #map(xlim = xlimy, ylim = ylimy, add = T, fill = T, col = "light grey", border=NA,   lwd = 4)
+  for (i in 1:length(.Object@areanams)) {
+    polygon(.Object@area_defs[[i]], border = "black")
+    text(mean(.Object@area_defs[[i]]$x) + xadj[i], mean(.Object@area_defs[[i]]$y) +
+           yadj[i], .Object@areanams[i], col = "black",
+         font = 2, cex = 0.7)
+  }
+
+  lines(c(-45,-45,-30,-30,-25,-25),c(70,10,10,5,5,-30),col="blue",lty=2,lwd=3)
+  text(-25,33,"EAST MNG. AREA",col='blue',font=2,cex=0.8)
+  text(-62,33,"WEST MNG. AREA",col='blue',font=2,cex=0.8)
+
+  doax<-function(X=T,Y=T){
+    ticks<-seq(-200,200,by=10)
+    none<-c(-1000,1000)
+    nolab<-rep("",length(ticks))
+    if(X){axis(1,ticks,ticks)
+    }else{axis(1,ticks,nolab)}
+    if(Y){axis(2,ticks, ticks)
+    }else{axis(2,ticks,nolab)}
+    axis(3,none);axis(4,none)
+  }
+  doax(X=F)
+  mtext("(a) Area definitions",line=0.5,cex=labcex)
+
+
+  Nind<-TEG(dim(out$N))
+  B<-array(NA,dim(out$N))
+  B[Nind]<-out$N[Nind]*out$wt_age[Nind[,c(2,4,1)]]
+  Bsum<-apply(B[,36:55,,1:35,],c(1,5),sum) # SSB by year and area in spawning season
+  Bfrac<-Bsum/apply(Bsum,1,sum)
+
+
+  roundy=1
+  cols<-rep(NA,1001)
+  for(i in 1:1001)cols[i]<-heat.colors(n=1,alpha=i/1001)
+  Bcol<-ceiling(Bfrac*1000)
+
+  domap<-function(Bc,Bf){
+    plot(xlimy, ylimy, col = "white", axes = F, xlab = "", ylab = "")
+
+
+    map(xlim = xlimy + c(-5, 5), ylim = ylimy + c(-5, 5), add = T,fill=T, border=NA,  col = "light grey")
+    #map(xlim = xlimy, ylim = ylimy, add = T, fill = T, col = "light grey", border=NA,   lwd = 4)
+    for (i in 1:length(.Object@areanams)) polygon(.Object@area_defs[[i]], border = "black",col=cols[Bc[i]])
+
+
+    map(xlim = xlimy + c(-5, 5), ylim = ylimy + c(-5, 5), add = T,fill=T, border=NA,  col = "light grey")
+    for (i in 1:length(.Object@areanams)) {
+      text(mean(.Object@area_defs[[i]]$x) + xadj[i], mean(.Object@area_defs[[i]]$y) +
+           yadj[i], paste0(round(Bf[i]*100,roundy),"%"), col = "black",
+              font = 2, cex = 0.8)
+    }
+  }
+
+  BE<-Bsum[1,]/apply(Bsum,2,sum)
+  domap(Bc=ceiling(BE*1000),Bf=BE); doax(Y=F,X=F);mtext("(b) Percentage biomass that is Eastern (2000-2019)",line=0.5,cex=labcex)
+  domap(Bc=Bcol[2,],Bf=Bfrac[2,]); doax();mtext("(c) Percentage of Western biomass in area (2000-2019)",line=0.5,cex=labcex)
+  domap(Bc=Bcol[1,],Bf=Bfrac[1,]); doax(Y=F);mtext("(d) Percentage of Eastern biomass in area (2000-2019)",line=0.5,cex=labcex)
+
+  mtext(expression(paste(Longitude*degree,"E")),1,outer=T,line=1.7)
+  mtext(expression(paste(Latititude*degree,"N")),2,outer=T,line=1.7)
+
+dev.off()
+
+# --- Figure X - Mixing of OMs -------------------------------
+OMdirs<-paste0("C:/Users/tcar_/Dropbox/abft-mse/objects/OMs/",c(25, 31, 43))
+
+source("./Methods/Source/Mixing figs.R")
+
+jpeg("./Figures/Figure 2.jpg",res=600, units="in",height=4, width=7)
+
+  ylim_E_E<-range(lapply(F_E_E,range))
+  ylim_E_W<-range(lapply(F_E_W,range))
+  ylim_W_E<-range(lapply(F_W_E,range))
+  ylim_W_W<-range(lapply(F_W_W,range))
+  ylim_EinW<-range(lapply(F_EinW,range))
+  ylim_WinE<-range(lapply(F_WinE,range))
+
+  yrs<-OMIs[[1]]@years[1]:OMIs[[1]]@years[2]
+  par(mfrow=c(1,2),mai=c(0.35,0.35,0.4,0.15),omi=c(0.4,0.4,0.05,0.05))
+  fonty=2
+  cexy=0.8
+  plot(yrs,F_EinW[[1]]*100,col="white",ylim=c(0,ylim_EinW[2])*100,yaxs='i'); grid()
+  for(i in 1:nOMs)lines(yrs,F_EinW[[i]]*100,col=cols[i],lty=ltys[i],lwd=lwds[i])
+  mtext("(a) Eastern stock biomass in the West area",3,line=1,font=fonty,cex=cexy)
+
+  plot(yrs,F_WinE[[1]]*100,col="white",ylim=c(0,ylim_WinE[2])*100,yaxs='i'); grid()
+  for(i in 1:nOMs)lines(yrs,F_WinE[[i]]*100,col=cols[i],lty=ltys[i],lwd=lwds[i])
+  mtext("(b) Western stock biomass in the East area",3,line=1,,font=fonty,cex=cexy)
+
+  legend('bottomright',title="OPERATING MODEL",legend=c("Low abundance","High eastern","High abundance"),cex=0.8,text.col=cols,lty=ltys,lwd=lwds,col=cols,text.font=2,bty='n')
+  mtext("Biomass Percentage",2,line=0.5,font=2,outer=T,cex=cexy)
+  mtext("Year",1,line=0.5,font=2,outer=T,cex=cexy)
+
+dev.off()
+
+
+# --- Figure X - Plot tagging designs ------------------------
+
+TDnam <- c("Proportional to catches in 2019", "Proportional to catches in 2019 but balanced East-West","Uniform over strata with catches","Proportional to fishing mortality rate in 2019","Consistent with historical conventional tagging","Consistent with historical electronic tagging")
+TDs  <- c("Rel_cat_2019","Balanced","Uniform","Rel_F_2019","Conv_Tag","E_Tag")
+anams<-c("G. Mex.","West Atl.","G. St Law.","South Atl.","North Atl.","East Atl.","Med.")
+nTD<-length(TDs)
+
+plotspat<-function(TD,names.arg=""){  barplot(apply(TD[,1,,],3,sum)/sum(TD[,1,,])*100,names.arg=names.arg,border="white",las=2);axis(1,c(-1000,1000))}
+plotseas<-function(TD,names.arg=""){  barplot(apply(TD[,1,,],2,sum)/sum(TD[,1,,])*100,names.arg=names.arg,border="white",las=2);axis(1,c(-1000,1000))}
+plotfleet<-function(TD,names.arg="",TDs){
+  rat<-rep(0,dim(TD)[1])
+  for(i in 1:length(TDs)){
+    TDo<-get(TDs[i])
+    rat<-rat+apply(TDo[,1,,],1,sum)/sum(TDo[,1,,])
+  }
+  rat<-rat/(length(TDs))
+  keep<-rat>0.025
+  rat<-apply(TD[,1,,],1,sum)/sum(TD[,1,,])*100
+  barplot(rat[keep],names.arg=names.arg[keep],border="white",las=2)
+  axis(1,c(-1000,1000))
+}
+
+Fleetnams<-c("Longline Other","Longline Japan",rep("Baitboat",2),rep("Purse seine Med",3),
+             "Purse seine Norway","Purse seine Croatia",rep("Purse seine West Atl",2),
+             rep("Trap",2),"Rod Reel Canada","Rod Reel Small USA","Rod Reel Large USA",
+             "Other fleets","Longline Japan")
+
+jpeg("./Figures/Figure 3.jpg",res=600, units="in",height=7, width=6)
+
+   par(mai=c(0.2,0.4,0.2,0.01),omi=c(1.1,0.33,0.05,0.05))
+   layout(matrix(1:(nTD*3),nrow=nTD,byrow=T),widths = c(1.3,1.5,1))
+
+  for(td in 1:nTD){
+
+    TD<-get(TDs[td])
+    if(td<nTD){
+      plotspat(TD)
+      plotfleet(TD,TDs=TDs)
+      mtext(TDnam[td],line=0.5,adj=0.5,font=2,cex=0.7)
+      plotseas(TD)
+    }else{
+      plotspat(TD,names.arg=anams)
+      plotfleet(TD,TDs=TDs, names.arg=Fleetnams)
+      mtext(TDnam[td],line=0.5,font=2,cex=0.7)
+      plotseas(TD,names.arg=c("Jan - Mar", "Apr - Jun","Jul - Sept","Oct - Dec"))
+    }
+
+  }
+  mtext("%",side=2,line=0.6,outer=T,cex=0.9)
+dev.off()
+
+
+# --- Figure 4. Estimation bias and precision by stock and release design ---------------
+
+TDnam <- c("Proportional to catches in 2019", "Proportional to catches in 2019 but balanced East-West","Uniform over strata with catches","Proportional to fishing mortality rate in 2019","Consistent with historical conventional tagging","Consistent with historical electronic tagging")
+
+datfile <- "G:/Shared drives/BM shared/1. Projects/Bluefin_Gene_Tag/Output/Estimation_TD.dat"
+dat<-read.csv(datfile,sep=" ")
+yrs<-2020:2025
+
+ASs<-as.numeric(dat$AS)
+TDs<-as.numeric(dat$TD)
+
+jpeg("./Figures/Figure 4.jpg",res=600, units="in",height=11, width=7)
+
+  par(mfrow=c(6,4),mai=c(0.05,0.35,0.45,0.05),omi=c(0.55,0.05,0.35,0.05))
+  labs<-paste0("(",letters[1:24],")")
+  j<-0
+  for(td in 1:6){
+    for(AS in 2:1){
+      j<-j+1
+      subd<-dat[TDs==td & ASs==AS,]
+      est<-subd[,5:10]
+      prec<-subd[,11:16]
+      cond<-!is.na(apply(est,1,sum))&!is.na(apply(prec,1,sum))
+      est<-est[cond,]
+      prec<-prec[cond,]
+
+      qs<-t(apply(est,2,quantile, p=c(0.05,0.25,0.5,0.75,0.95)))
+      qs2<-t(apply(prec,2,quantile, p=c(0.05,0.25,0.5,0.75,0.95)))
+
+      if(all(qs==qs[1,1])){ # did not converge
+        plot(1,1,axes=F,col="white",main="",xlab="",ylab="")
+        legend("center",legend="Insufficient recaptures",bty="n")
+        if(AS==2)mtext(TDnam[td],line=1.3,adj=0,cex=0.7,font=2)
+        plot(1,1,axes=F,col="white",main="",xlab="",ylab="")
+        legend("center",legend="Insufficient recaptures",bty="n")
+
+
+      }else{
+
+        custombar(qs[2:6,],MPnams=yrs[2:6],ylim=c(0,0.25),refline=0.1,xlab=(td==6))
+        mtext(labs[j],line=0.1,adj=0.01,cex=0.7)
+        if(AS==2)mtext(TDnam[td],line=1.3,adj=0,cex=0.7,font=2)
+        j<-j+1
+        custombar(qs2[2:6,],MPnams=yrs[2:6],ylim=c(0,0.5),xlab=(td==6))
+        mtext(labs[j],line=0.1,adj=0.01,cex=0.7)
+      }
+     
+    }
+  }
+
+  mtext(c("Western Stock","Eastern Stock"),adj=c(0.22,0.78),line=0.9,outer=T,cex=0.9,font=2)
+  mtext(rep(c("MLE","CV"),2),adj=c(0.1,0.38,0.61,0.9),outer=T,cex=0.8,font=2,line=-0.3)
+  mtext("Projection Year",1,outer=T,line=2.9,cex=0.85)
+
+dev.off()
+
+
+
+
+
+
+
+
+
+
+

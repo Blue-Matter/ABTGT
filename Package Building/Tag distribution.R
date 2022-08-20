@@ -13,9 +13,9 @@ Cobs_p<-out$Cpred[55,,,]/sum(out$Cpred[55,,,])             # in proportion to ca
 Cobs_d<-(out$Cpred[55,,,]^0.5)/(sum(out$Cpred[55,,,]^0.5)) # a more uniform tagging distribution
 Cobs_u<-(out$Cpred[55,,,]^0.0001)/(sum(out$Cpred[55,,,]^0.0001)) # a uniform tagging distribution (zero where catches are are zero)
 
-proyears<-54
+proyears<-34
 
-Rel_cat_2019 = Default = Uniform = array(NA,c(out$nf,proyears+1,out$ns,out$nr))
+Rel_cat_2019 = Default = Uniform = Balanced = array(NA,c(out$nf,proyears+1,out$ns,out$nr))
 ind<-TEG(dim(Rel_cat_2019))
 
 Rel_cat_2019[ind]<-Cobs_p[ind[,c(3,4,1)]]
@@ -23,17 +23,23 @@ Default[ind] <- Cobs_d[ind[,c(3,4,1)]]
 Uniform[ind] <- Cobs_u[ind[,c(3,4,1)]]
 
 
+reorg<-reorg1<-aperm(Cobs_p,c(1,3,2))
+reorg1[,,1:3]<-reorg[,,1:3]/sum(reorg[,,1:3])*0.5
+reorg1[,,4:7]<-reorg[,,4:7]/sum(reorg[,,4:7])*0.5
+Balanced[ind]<-reorg1[ind[,c(3,1,4)]]
+
 # Test (near term high releases)
 
 Test<-Default
-Test[,6:55,,]<-0
+Test[,6:34,,]<-0
 
-class(Rel_cat_2019)<-class(Default)<-class(Uniform)<-class(Test)<-"RD"
+class(Rel_cat_2019)<-class(Default)<-class(Uniform)<-class(Test)<-class(Balanced)<-"RD"
 
 save(Rel_cat_2019,file=paste0(getwd(),"/ABTGT/data/Rel_cat_2019.RData"))
 save(Default,file=paste0(getwd(),"/ABTGT/data/Default.RData"))
 save(Uniform,file=paste0(getwd(),"/ABTGT/data/Uniform.RData"))
 save(Test,file=paste0(getwd(),"/ABTGT/data/Test.RData"))
+save(Balanced,file=paste0(getwd(),"/ABTGT/data/Balanced.RData"))
 
 
 
