@@ -1,0 +1,38 @@
+
+
+# Design a tagging estimator for use in an MP
+library(ABTMSE)
+library(ABTGT)
+loadABT()
+setwd("C:/GitHub/ABTGT/ABTGT/R")
+#setwd("C:/Users/tcarruth/Documents/GitHub/ABTGT/ABTGT/R")
+
+source("00_functions_Brownie.R")
+
+
+Estloc<-"C:/temp/MSEs_GT/Estimation_OM/"
+dset<-readRDS(paste0(Estloc,"/",files[1]))@PPD[[6]]
+x<-1
+AS<-2
+
+source("G:/Shared drives/BM shared/1. Projects/Bluefin_Gene_Tag/Methods/Source/GTMP.R")
+
+# testing
+
+OM<-readRDS("G:/Shared drives/BM shared/1. Projects/Bluefin_Gene_Tag/Testing/OMtest.rda")
+GT <- make_GT(OM,nT=25*500,RD="E_Tag")
+GT$GTcheck=T
+test<-new('MSE_GT',OM,MPs=list(c("GTMP","GTMP")),GT=GT)
+
+MPs=list(c("U5","U5"))
+
+len<-3
+tag_data<-list()
+tag_data$N_recap<-array(c(1,0,0,9,2,0,0,3,0),c(len,len))
+tag_data$N_tag<-c(10,20,10)
+est <- Brownie(tag_data,fix_M = TRUE, M = 0.125, latency = 1, report_rate = 1,
+               fix_retain = TRUE, retain = 1) # Estimate M
+is.na(est$report$NLL[1])
+
+
+

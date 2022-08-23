@@ -2,10 +2,10 @@
 Brownie <- function(tag_data, fix_M = FALSE, M = 0.06, latency = 4, report_rate = 1,
                     fix_retain = TRUE, retain = 1) {
   #TMB::compile("C:/GitHub/ABTGT/ABTGT/R/Brownie/brownie.cpp")
-  #get_TMB_model <- try(dyn.load("Brownie/brownie.dll"), silent = TRUE)
-  #if(is.character(get_TMB_model)) TMB::compile("Brownie/brownie.cpp")
-  dyn.load("C:/GitHub/ABTGT/ABTGT/R/Brownie/brownie.dll")
-  on.exit(dyn.unload("C:/GitHub/ABTGT/ABTGT/R/Brownie/brownie.dll"))
+  get_TMB_model <- try(dyn.load("Brownie/brownie.dll"), silent = TRUE)
+  if(is.character(get_TMB_model)) TMB::compile("Brownie/brownie.cpp")
+  dyn.load("Brownie/brownie.dll")
+  on.exit(dyn.unload("Brownie/brownie.dll"))
 
   TMB_data <- list(N_rel = tag_data$N_tag, N_NR = tag_data$N_tag - rowSums(tag_data$N_recap, na.rm = TRUE),
                    N_recap = tag_data$N_recap, n_group = length(tag_data$N_tag), n_y = ncol(tag_data$N_recap),
@@ -20,8 +20,6 @@ Brownie <- function(tag_data, fix_M = FALSE, M = 0.06, latency = 4, report_rate 
   if(fix_retain) map$log_retain <- factor(NA)
   map$log_report_rate <- factor(NA)
   #map$log_latent_report <- c(NA, 1:(latency - 1)) %>% factor()
-
-  #obj <- TMB::MakeADFun(data = TMB_data, parameters = TMB_params, map = map, DLL = "brownie", silent = TRUE)
 
   obj <- TMB::MakeADFun(data = TMB_data, parameters = TMB_params, map = map, DLL = "brownie", silent = TRUE)
   opt <- nlminb(obj$par, obj$fn, obj$gr)

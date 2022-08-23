@@ -23,9 +23,9 @@ Brownie <- function(tag_data, fix_M = FALSE, M = 0.06, latency = 4, report_rate 
 
   #obj <- TMB::MakeADFun(data = TMB_data, parameters = TMB_params, map = map, DLL = "brownie", silent = TRUE)
 
-  obj <- TMB::MakeADFun(data = TMB_data, parameters = TMB_params, map = map, DLL = "brownie", silent = TRUE)
+  obj <- MakeADFun(data = TMB_data, parameters = TMB_params, map = map, DLL = "brownie", silent = TRUE)
   opt <- nlminb(obj$par, obj$fn, obj$gr)
-  SD <- TMB::sdreport(obj)
+  SD <- sdreport(obj)
   report <- obj$report(opt$par)
   return(list(obj = obj, opt = opt, SD = SD, report = report))
 }

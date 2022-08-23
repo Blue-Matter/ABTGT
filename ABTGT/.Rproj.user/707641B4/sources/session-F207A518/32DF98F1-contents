@@ -210,7 +210,7 @@ setMethod("initialize", "MSE_GT", function(.Object,OM=OM_example,MPs=list(c("U5"
     stop()
   }
 
-  MPsa<-MPs #append(list(c("ZeroC","ZeroC")),MPs) # make sure a zeroC reference MP is included
+  MPsa<-append(list(c("ZeroC","ZeroC")),MPs) # make sure a zeroC reference MP is included
 
 
 
@@ -987,8 +987,7 @@ setMethod("initialize", "MSE_GT", function(.Object,OM=OM_example,MPs=list(c("U5"
                   "DD_R","CDD","Fadapt","MeanC","tiny"),  namespace="ABTMSE")
 
   upyrs<-(nyears+MPlag)+(0:(floor((OM@proyears-2)/interval)-1))*interval  # the years in which there are updates (every interval years)
-  print(paste0("MPlag = ",MPlag))
-  print(paste0("upyrs = ",upyrs))
+
   CAdist<-array(NA,c(nsim,npop,nareas,nfleets,nages))
 
   # Allocation / assessment vector -------------------------

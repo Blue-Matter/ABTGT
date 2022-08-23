@@ -1,0 +1,86 @@
+library(ABTMSE)
+library(ABTGT)
+loadABT()
+
+setwd("G:/Shared drives/BM shared/1. Projects/Bluefin_Gene_Tag")
+OMs<-list.files("G:/Shared drives/BM shared/1. Projects/Bluefin_Gene_Tag/OMs",full.names = T,include.dirs = T)
+nOM <- length(OMs)
+source("G:/Shared drives/BM shared/1. Projects/Bluefin_Gene_Tag/Methods/Source/UMSY MPs.R") # loads MPs
+source("G:/Shared drives/BM shared/1. Projects/Bluefin_Gene_Tag/Methods/Source/GTMP.R")
+
+setwd("C:/GitHub/ABTGT/ABTGT/R")
+#setwd("C:/Users/tcarruth/Documents/GitHub/ABTGT/ABTGT/R")
+#source("00_functions_Brownie.R")
+
+TDnam <- c("Rel. to catches", "Balanced","Uniform","Rel. to F","Conv. Tag","E. Tag")
+TDs  <- c("Rel_cat_2019","Balanced","Uniform","Rel_F_2019","Conv_Tag","E_Tag")
+nTD<-length(TDs)
+ryrs<-25
+tagnos<-c(200,500)*ryrs # total releases over 10 years (average per year)
+ntn<-length(tagnos)
+
+
+
+#ind<-expand.grid(6,1:nOM,1:ntn)
+
+
+# --------------results for OM #1 -------------------------------------------------------------
+
+ind<-expand.grid(6,1:2,1:ntn)
+
+dontrepeat=F
+if(dontrepeat){
+  Estfiles_s<-list.files("C:/temp/MSEs_GT/Closed_loop")
+  tt<-as.numeric(sapply(Estfiles_s,function(x)strsplit(x,"_")[[1]][2]))
+  oo<-as.numeric(sapply(Estfiles_s,function(x)strsplit(x,"_")[[1]][3]))
+  tn<-as.numeric(sapply(Estfiles_s,function(x)strsplit(x,"_")[[1]][4]))
+  filecodes<-paste(tt,oo,tn,sep="_")
+  indcodes<-paste(ind[,1],ind[,2],ind[,3],sep="_")
+  keep<-!(indcodes%in%filecodes)
+  ind<-ind[keep,]
+}
+
+#MPs<-GTMPs #c(MPs1,GTMPs)
+MPs<-GTMPs_short
+
+# MPs<-list(c("GT3","GT3"))
+
+#MPs<-GTMPs
+sfInit(parallel=T,cpus=4)#parallel::detectCores()/2)
+sfExport(list=list("Good_Obs","Perfect_Obs","Ann_Cat","Unreported_20","OM_1d","GTMP"))
+sfExport(list=as.list(paste0("U",1:10)))
+sfExport(list=as.list(paste0("GT",1:14)))
+
+sfExport(list=list("TDs","OMs","ryrs","ind","tagnos","MPs"))
+sfLibrary("ABTMSE",character.only=TRUE, verbose=FALSE)
+sfLibrary("ABTGT", character.only=TRUE, verbose=FALSE)
+sfLibrary("TMB", character.only=TRUE, verbose=FALSE)
+
+doMSEfunc<-function(x,MPs){
+  tt<-ind[x,1]; oo<-ind[x,2]; tn<-ind[x,3]
+  TD<-get(TDs[tt])
+  OM<-readRDS(OMs[oo])
+  #OM<-readRDS("G:/Shared drives/BM shared/1. Projects/Bluefin_Gene_Tag/Testing/OMtest.rda")
+
+  set.seed(1)
+  OM@seed<-oo+20000
+  GT <- make_GT(OM,nT=tagnos[tn],RD=TDs[tt],ryrs=ryrs)
+  GT$GTcheck=F
+  obj<-new('MSE_GT',OM,MPs,GT=GT)
+  saveRDS(obj,paste0("C:/temp/MSEs_GT/Closed_loop/MSE_",tt,"_",oo,"_",tn))
+}
+
+sfSapply(1:nrow(ind),doMSEfunc, MPs=MPs)
+sapply(1:nrow(ind),doMSEfunc, MPs=MPs)
+
+
+
+#sapply(1:2,doMSEfunc,MPs=MPs)
+#sfSapply(1:2,doMSEfunc,MPs=MPs)
+
+
+
+
+
+
+
