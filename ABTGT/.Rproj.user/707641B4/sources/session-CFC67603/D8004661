@@ -3,9 +3,9 @@
     "path": "C:/GitHub/ABTGT/ABTGT/R/External.R",
     "project_path": "R/External.R",
     "type": "r_source",
-    "hash": "0",
+    "hash": "1955049478",
     "contents": "",
-    "dirty": true,
+    "dirty": false,
     "created": 1661978440523.0,
     "source_on_save": false,
     "relative_order": 5,
@@ -17,11 +17,11 @@
         "scrollLine": "0"
     },
     "folds": "",
-    "lastKnownWriteTime": 1661979282,
+    "lastKnownWriteTime": 1661988629,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1661980604857,
+    "last_content_update": 1661988629051,
     "read_only": false,
     "read_only_alternatives": []
 }
