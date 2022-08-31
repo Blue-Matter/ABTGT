@@ -1,7 +1,7 @@
 Package: ABTGT
 Type: Package
 Title: Atlantic Bluefin Tuna Genetic Tagging
-Version: 0.3.3
+Version: 1.0.0
 Author: Tom Carruthers
 Maintainer: Tom Carruthers <tom@bluematterscience.com>
 Description: An extension to the ABTMSE R package for the simulation of genetic tagging programs and testing associated MPs.
