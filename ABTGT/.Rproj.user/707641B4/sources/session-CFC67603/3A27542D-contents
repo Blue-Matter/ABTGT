@@ -1,0 +1,63 @@
+
+
+wapply34<-function(dat,OMw,q=0.5){
+
+  dim1<-dim(dat)[3]
+  dim2<-dim(dat)[4]
+  out<-array(NA,c(dim1,dim2))
+
+  for(i in 1:dim1){for(j in 1:dim2){
+
+    out[i,j]<-wtd.quantile(as.vector(dat[,,i,j]),weight=rep(OMw,each=dim(dat)[1]),q=q)
+
+  }}
+
+  out
+}
+
+
+wapply23<-function(dat,OMw,q=0.5){
+
+  dim1<-dim(dat)[2]
+  dim2<-dim(dat)[3]
+  out<-array(NA,c(dim1,dim2))
+
+  for(i in 1:dim1){for(j in 1:dim2){
+
+    out[i,j]<-wtd.quantile(as.vector(dat[,i,j]),weight=rep(OMw,each=dim(dat)[1]),q=q)
+
+  }}
+
+  out
+}
+
+
+wapply3_qs<-function(dat,OMw,qs){
+
+  dim1<-dim(dat)[3]
+  out<-array(NA,c(length(qs),dim1))
+
+  for(i in 1:dim1){
+
+    out[,i]<-wtd.quantile(as.vector(dat[,,i]),weight=rep(OMw,each=dim(dat)[1]),q=qs)
+
+  }
+
+  out
+}
+
+
+wapply34_mu<-function(dat,OMw){
+
+  dim1<-dim(dat)[3]
+  dim2<-dim(dat)[4]
+  out<-array(NA,c(dim1,dim2))
+
+  for(i in 1:dim1){for(j in 1:dim2){
+
+    out[i,j]<-weighted.mean(as.vector(dat[,,i,j]),w=rep(OMw,each=dim(dat)[1]))
+
+  }}
+
+  out
+}

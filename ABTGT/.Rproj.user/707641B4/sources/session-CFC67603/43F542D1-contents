@@ -1,0 +1,46 @@
+# CompRes<-readRDS("C:/Users/tcar_/Dropbox/abft-mse/R_package/ABTMSE/inst/shiny_apps/ABTMSE/data/CompResd.rda")
+# CompRes<-readRDS("C:/Users/tcar_/Dropbox/BFT MSE/ABT MSE Performance App/data/CompRes.rda")
+CompRes<<-readRDS("./data/CompRes.rda") # Can be loaded by user
+MET<<-CompRes$MET
+pnames<<-CompRes$pnames
+MPnames<<-CompRes$MPnames
+OMnames<<-CompRes$OMnames[!grepl("R",CompRes$OMnames)]
+ROMnames<<-CompRes$OMnames[grepl("R",CompRes$OMnames)]
+ROMcode<<-CompRes$ROMcode
+MPcols<<-rep(c("black","red","green","blue","orange",
+               "grey","purple","brown","pink","darkblue",
+               "darkgreen","darkred","deeppink3","khaki",
+               "turquoise3","tan3"),10)
+
+
+Mets1<-c("PGK","AvC10","AvC30","VarC","LD")
+Types1<-c("Mean","%","%","%","%")
+Levs1<-c(0,0.5,0.5,0.5,0.15)
+HL1<-c("H","H","H","L","H")
+mwts1<-list(c(0,0.5,0.5,1,1),
+          c(0,0.25,0.25,0.5,1),
+          c(0,1,1,1,1))
+
+Mets2<-c("C1",   "AvC20","AvgBr","Br20","Br30","LD","LD","POF", "PNRK", "OFT")
+Types2<-c("%",   "%",    "%",   "%",    "%",   "%", "%", "Mean","Mean","Lev")
+Levs2 <-c(0.5,    0.5,     0.5,     0.5, 0.05,  0.05,  0.1,  1,     1,     0)
+HL2 <-  c("H",   "H",    "H",   "H",     "H",   "H", "H", "L",  "H",   "H")
+mwts2 <- c(0,rep(1, 9))
+
+Syear<<-1965
+Fyear<<-2019
+ProjyInd<<-56:109
+OM_wt<<-c(300, 300, 150, 300, 300, 150, 300, 300, 150, 300, 300, 150, 150, 150, 75, 150, 150, 75, 250, 250, 125, 250, 250, 125, 300, 300, 150, 300, 300, 150, 300, 300, 150, 300, 300, 150, 150, 150, 75, 150, 150, 75,
+  250, 250, 125, 250, 250, 125, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 150, 150, 150, 150,
+  300, 300, 300, 300, 300, 300, 300, 300)
+
+MPs<<-unique(sapply(MPnames,function(x)substr(x,1,2)))
+Tunes<<-2:6 # unique(sapply(MPnames,function(x)substr(x,3,3)))
+Configs<<-c("a","b","c","d")
+MPtypes<<-MPs[MPs!="Ze"]
+OMind<<-1:48
+
+types <<-sapply(MPnames,function(x)substr(x,1,2))
+tunes <<- sapply(MPnames,function(x)substr(x,3,3))
+caps <<- sapply(MPnames,function(x)substr(x,4,4))
+

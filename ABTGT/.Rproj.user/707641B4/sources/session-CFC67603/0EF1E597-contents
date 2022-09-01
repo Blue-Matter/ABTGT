@@ -51,7 +51,7 @@ dat<-data.frame(c("Funding body","Funding stream","NOAA Award Number",
                    "NA21NMF4720304",
                    "NOAA-NMFS-SE-2021-2006574",
                    "The Ocean Foundation, Blue Matter Science Ltd.",
-                   "Tom Carruthers, Shana Miller, Matt Lauretta, Doug Butterworth, Ann Preece, Richard Hillary"))
+                   "Tom Carruthers, Shana Miller, Matt Lauretta, Doug Butterworth, Ann Preece, Nathan Taylor, Quang Huynh, Adrian Hordyk"))
 
 kable(dat,col.names=rep("",2)) 
  
@@ -77,7 +77,7 @@ The objective of this project is to use existing operating models for Atlantic b
 
 ### Project status (100%)
 
-Completed so far:
+All methods and draft papers complete:
 
 * An individual tagging model has been integrated into the the MSE framework
 * Observed tag histories are now available to MPs for the setting of management advice
@@ -87,12 +87,12 @@ Completed so far:
 * An initial draft of the of the paper has been produced (See below)
 * Additionally a draft SCRS paper has been produced for feedback from the ICCAT species group members
 
-Next steps: 
+Final steps: 
 
 1. Consolidate feedback from authors of the peer review paper
 2. Format peer-review paper for submission and submit
 3. Update the MP results on the ABTMSE shiny App
-4. Draft final project report
+4. Draft final project report to NOAA (Sept 30 2022)
 
 &nbsp;
 &nbsp;
@@ -123,7 +123,7 @@ Next steps:
 
 These instructions assume you have an up-to-date copy of R and an appropriate editor such as RStudio
 
-The latest ABTMSE R package can be downloaded from [here]()  
+The latest ABTMSE R package can be downloaded from [here](https://drive.google.com/drive/folders/1ZR3IudYH8ABcweWO_hWbO1uhImFzFFPm?usp=sharing)  
 
 You can install it from the RStudio menu: Tools/Install Packages/Install from: Package Archive File
 

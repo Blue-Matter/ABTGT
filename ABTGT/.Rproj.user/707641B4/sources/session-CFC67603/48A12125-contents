@@ -1,0 +1,345 @@
+
+library(shiny)
+library(DT)
+library(fmsb)
+library(shinyalert)
+library(ggplot2)
+library(viridis)
+library(gridExtra)
+library(reldist)
+library(quantreg)
+library(RColorBrewer)
+
+options(shiny.maxRequestSize=10000*1024^2)
+
+source("./global.R")
+
+shinyServer(function(input, output, session){
+
+  source("./Source/Weighted_estimators.R",local=T)
+ 
+  Tabs<-reactiveValues()
+  Tabs$Tab1=DT::datatable(NULL)
+  Tabs$Tab2=DT::datatable(NULL)
+  Tabs$Tab3=DT::datatable(NULL)
+  
+  DFs<-reactiveValues()
+  DFs$DF1=NA#data.frame(NULL)#data.frame(x=31:40,y=41:50))
+  DFs$DF2=NA#data.frame(NULL)#data.frame(x=31:40,y=41:50))
+  DFs$DF3=NA#data.frame(NULL)#data.frame(x=31:40,y=41:50))
+  
+  Ords<-reactiveValues()
+  Ords$Tab<-NA
+  
+  Design<-CompRes$Design
+  OMgrid<-Design$Design_Ref
+
+  USERID<-Sys.getenv()[names(Sys.getenv())=="USERNAME"]
+  SessionID<-paste0(USERID,"-",strsplit(as.character(Sys.time())," ")[[1]][1],"-",strsplit(as.character(Sys.time())," ")[[1]][2])
+  output$SessionID<-renderText(SessionID)
+
+  nOMs<-length(OMnames)+length(ROMnames)
+  OMcode<<-apply(OMgrid,1,function(x)paste0(x,collapse=" "))
+
+  output$CMPhelp <- DT::renderDataTable(DT::datatable(data.frame(Code=MPnames,Description=CompRes$CMPdesc)))
+  output$PMhelp <- DT::renderDataTable(DT::datatable(data.frame(Code=pnames,Description=CompRes$pdesc),options=list(pageLength=25)))
+
+  output$Tab1 <- DT::renderDataTable(Tabs$Tab1)#,extensions='Buttons',options = list(dom = 'Btpl',pageLength=25,buttons = c('csv', 'excel'))) #,rownames=T,spacing="xs",digits=0,align="c")
+  output$Tab2 <- DT::renderDataTable(Tabs$Tab2)#,extensions='Buttons',options = list(dom = 'Btpl',pageLength=25,buttons = c('csv', 'excel'))) #,rownames=T,spacing="xs",digits=0,align="c")
+  output$Tab3 <- DT::renderDataTable(Tabs$Tab3)#,extensions='Buttons',options = list(dom = 'Btpl',pageLength=25,buttons = c('csv', 'excel'))) #,rownames=T,spacing="xs",digits=0,align="c")
+  
+  makeTransparent<-function (someColor, alpha = 100)
+  {
+    newColor <- col2rgb(someColor)
+    apply(newColor, 2, function(curcoldata) {
+      rgb(red = curcoldata[1], green = curcoldata[2], blue = curcoldata[3],
+          alpha = alpha, maxColorValue = 255)
+    })
+  }
+  addalpha <- function(colors, alpha=1.0) {
+    r <- col2rgb(colors, alpha=T)
+    # Apply alpha
+    r[4,] <- alpha*255
+    r <- r/255.0
+    return(rgb(r[1,], r[2,], r[3,], r[4,]))
+  }
+  
+
+  DoTab<-function(Tab,nbk=100,HLs,caption="",mwts,doord=F,stocky=NA){
+ 
+    if(is.na(stocky)){
+      colsbystock<-(ncol(Tab)-1)/2
+      labs<-names(Tab)[1:colsbystock]
+      sketch = htmltools::withTags(table(
+        class = 'display',
+        thead(
+          tr(
+            th(rowspan = 2, 'CMP'),
+            th(colspan = colsbystock, 'West'),
+            th(colspan = colsbystock, 'East'),
+            th(rowspan = 2, 'Tot')
+          ),
+          tr(
+            lapply(rep(labs, 2), th)
+          )
+        )
+      ))
+    }else{
+      colsbystock<-(ncol(Tab)-1)
+      labs<-names(Tab)[1:colsbystock]
+      sketch = htmltools::withTags(table(
+        class = 'display',
+        thead(
+          tr(
+            th(rowspan = 2, 'CMP'),
+            th(colspan = colsbystock, stocky),
+            th(rowspan = 2, 'Tot')
+          ),
+          tr(
+            lapply(labs, th)
+          )
+        )
+      ))
+      
+    }
+    if(doord)Ords$Tab<-order(Tab[,ncol(Tab)])
+    Tab<-Tab[Ords$Tab,]
+    
+    dt<-datatable(Tab,class = list(stripe = FALSE),caption=caption,container=sketch,
+                  extensions = 'Buttons',options=list(dom = 'Bt',pageLength=100,
+                  buttons = c('csv', 'excel')),height = "100%" )  #%>%
+    
+    nbk <- 100
+    for (j in 1:ncol(Tab)) {
+      # Create breaks for shading column values high to low
+      brks <- seq(min(Tab[,j]),max(Tab[,j]),length.out=nbk)
+      # Create shades of green for backgrounds
+      y <- round(seq(255, 40, length.out = nbk + 1), 0)
+      #clrs <- paste0("rgb(", y, ", 255,", y, ")")
+      #clrs <- rainbow(nbk + 1, start=0.05,end=0.3,)
+      if(input$ColCode=="Viridis") clrs = rev(viridis(nbk + 1,alpha=0.7*mwts[j]))# Viridis","Blue scale","Grey scale","None
+      if(input$ColCode=="Blue scale"){
+        clrs =colorRampPalette(brewer.pal(9,"Blues"))(nbk + 1) 
+        #clrs = rev(clrs)#makeTransparent(rev(clrs), mwts[j]*100)
+        clrs = addalpha(clrs,0.6*mwts[j])
+      } 
+      if(input$ColCode=="Blue scale 2"){
+        clrs =colorRampPalette(brewer.pal(9,"Blues"))(nbk + 1) 
+        #clrs = rev(clrs)#makeTransparent(rev(clrs), mwts[j]*100)
+        clrs = addalpha(clrs,0.6*mwts[j])
+        
+      } 
+      if(input$ColCode=="Grey scale") {
+        clrs =colorRampPalette(brewer.pal(9,"Greys"))(nbk + 1) 
+        #clrs = rev(clrs)#makeTransparent(rev(clrs), mwts[j]*100)
+        clrs = addalpha(clrs,0.6*mwts[j])
+      } 
+        
+      if(input$ColCode=="None") clrs = rep("white",nbk+1) 
+      if(input$InvCol)clrs=rev(clrs)
+      #saveRDS(clrs,"C:/temp/clrs.rda") # clrs<-readRDS("C:/temp/clrs.rda")
+      clrs[(col2rgb(clrs,alpha=T)[4,] / 255)<0.01]<-"white"
+      if(input$ColCode=="Blue scale 2")if(all(clrs=="white"))clrs[]<-"beige"
+      #clrs<-makeTransparent(clrs,mwts[j]*100)
+      if(HLs[j]=="L")clrs <- clrs[length(clrs):1]
+      # Format cells in j-th column
+      dt <- DT::formatStyle(dt, j, backgroundColor = DT::styleInterval(brks, clrs))
+    }
+   
+
+    dt
+
+  }
+
+  normify<-function(Tab,HLs,mwts){
+    Tab2 <- Tab
+    
+    if(input$NormByZero=="Min-max"){
+      for(cc in 1:ncol(Tab)){
+        if(HLs[cc]=="H")  Tab[,cc]<-(-Tab[,cc])
+        vec<-Tab[,cc]
+        Tab[,cc]<-(vec-min(vec))/(max(vec)-min(vec))
+        if(all(is.na(Tab[,cc])))Tab[,cc]<-0
+      }
+    }else if(input$NormByZero=="Percentage difference"){
+      for(cc in 1:ncol(Tab)){
+        vec<-Tab[,cc]
+        if(HLs[cc]=="H") vec=vec/max(vec)
+        if(HLs[cc]=="L") vec=min(vec)/vec
+        Tab[,cc]<-1-vec
+        if(all(is.na(Tab[,cc])))Tab[,cc]<-0
+      }
+    }
+  
+    wtarr<-t(array(mwts,dim(Tab)[2:1]))
+    Sum<-round(apply(wtarr*Tab,1,sum)/sum(mwts),2)
+    Tab2<-cbind(Tab2,Sum)
+    Tab2
+  }
+
+  quant<-function(x,star,MPind,mets,qs,typs,digits=3){
+    
+     
+    met  = match(mets[x],pnames)
+    dat  = MET[,OMind,star,MPind,met] # [sim, OM, MP]
+    dim1 = dim(dat)[3]
+    out  = rep(NA,dim1)
+   
+    # saveRDS(dat,"C:/temp/dat.rda")
+    # saveRDS(OM_wt[OMind],"C:/temp/OM_wt.rda")
+    # dat<-readRDS("C:/temp/dat.rda"); OM_wt<-readRDS("C:/temp/OM_wt.rda")
+    
+    for(i in 1:dim1){
+      if(typs[x]=="%")  out[i] = wtd.quantile(x=as.vector(dat[, , i]), weight = rep(OM_wt[OMind], each = dim(dat)[1]), q = qs[x])
+      if(typs[x]=="Mean")  out[i] = weighted.mean(as.vector(dat[, , i]), weight = rep(OM_wt[OMind], each = dim(dat)[1]))
+      if(typs[x]=="Lev") out[i] = mean(as.vector(dat[, , i] > (qs[x]*100)))#weighted.mean(as.vector(dat[, , i] > (qs[x]*100)),weight = rep(OM_wt[OMind], each = dim(dat)[1]))
+    }
+    round(out,digits=digits)
+  }
+
+
+  makeDF<-function(Mets,Types,HL,mwts,Levs){
+
+    if(input$Anon1){
+      MPnames<-paste0("CMP_",1:length(CompRes$MPnames))
+    }else{
+      MPnames<-CompRes$MPnames
+    }
+    
+    HLs<-c(HL,HL,"L") # add on the mean ranking High-low switch
+    nc <- length(Mets)
+
+    MPindo<- tunes==input$Tunings1 & caps == input$Configs1 & types %in% input$MPtypes1
+    
+    if(any(MPindo)){
+      datW<-as.data.frame(sapply(1:nc, quant, star=2,MPind=MPindo,mets=Mets,qs=Levs,typs=Types,digits=input$DecPls))
+      datE<-as.data.frame(sapply(1:nc, quant, star=1,MPind=MPindo,mets=Mets,qs=Levs,typs=Types,digits=input$DecPls))
+      cnams<-rep("",ncol(datW))
+      for(i in 1:ncol(datW)){ 
+        if(Types[i]=="%")cnams[i]<-paste0(Mets[i]," (",Levs[i]*100,"%)")
+        if(Types[i]=="Lev")cnams[i]<-paste0(Mets[i]," (P>",Levs[i]*100,")")
+        if(Types[i]=="Mean")cnams[i]<-paste0(Mets[i]," (Mean)")
+      }
+      names(datE)<-names(datW) <-cnams
+      
+      #saveRDS(datW,"C:/temp/datW.rds")
+      #saveRDS(datE,"C:/temp/datE.rds")
+     # datW=readRDS("C:/temp/datW.rds"); datE=readRDS("C:/temp/datE.rds")
+      
+      dat<-cbind(datW,datE)
+      row.names(dat)<-MPnames[MPindo]
+      
+      #saveRDS(dat,"C:/temp/dat.rda")
+      #saveRDS(HLs,"C:/temp/HLs.rda")
+      #saveRDS(mwts,"C:/temp/mwts.rda")
+      
+      # dat<-readRDS("C:/temp/dat.rda"); HLs<-readRDS("C:/temp/HLs.rda");  mwts<-readRDS("C:/temp/mwts.rda")
+      
+      datn<-normify(dat,HLs=HLs,mwts=c(mwts,mwts,1))
+      
+      
+    }else{
+      datn<-NA
+    }
+    datn
+  } 
+  
+  makeDFs<-function(Mets,Types,HL,mwts,Levs,stock=1){
+    
+    if(input$Anon1){
+      MPnames<-paste0("CMP_",1:length(CompRes$MPnames))
+    }else{
+      MPnames<-CompRes$MPnames
+    }
+    
+    HLs<-c(HL,"L") # add on the mean ranking High-low switch
+    nc <- length(Mets)
+    
+    MPindo<- tunes==input$Tunings1 & caps == input$Configs1 & types %in% input$MPtypes1
+    
+    if(any(MPindo)){
+      dat<-as.data.frame(sapply(1:nc, quant, star=stock,MPind=MPindo,mets=Mets,qs=Levs,typs=Types,digits=input$DecPls))
+      cnams<-rep("",ncol(dat))
+      for(i in 1:ncol(dat)){ 
+        if(Types[i]=="%")cnams[i]<-paste0(Mets[i]," (",Levs[i]*100,"%)")
+        if(Types[i]=="Lev")cnams[i]<-paste0(Mets[i]," (P>",Levs[i]*100,")")
+        if(Types[i]=="Mean")cnams[i]<-paste0(Mets[i]," (Mean)")
+      }
+      names(dat) <-cnams
+      row.names(dat)<-MPnames[MPindo]
+       
+      datn<-normify(dat,HLs=HLs,mwts=c(mwts,1))
+     
+    }else{
+      datn<-NA
+    }
+    datn
+  } 
+  
+  makeDF1<-function(){
+    #saveRDS(mwts1,"C:/temp/mwts1.rda")
+    #saveRDS(input$WScheme,"C:/temp/WScheme.rda")
+    #mwts1<-readRDS("C:/temp/mwts1.rda"); WScheme<-readRDS("C:/temp/WScheme.rda");
+    DFs$DF1<-makeDF(Mets=Mets1,Types=Types1,HL=HL1,mwts=mwts1[[as.integer(input$WScheme)]],Levs=Levs1)
+    #saveRDS(DFs$DF1,"C:/temp/DF1.rda") # DF1<-readRDS("C:/temp/DF1.rda")
+  }
+  
+  makeDF2<-function(){
+    DFs$DF2<-makeDFs(Mets=Mets2,Types=Types2,HL=HL2,mwts=mwts2,Levs=Levs2,stock=1)
+  }   
+  
+  makeDF3<-function(){
+    DFs$DF3<-makeDFs(Mets=Mets2,Types=Types2,HL=HL2,mwts=mwts2,Levs=Levs2,stock=2)
+  }  
+  
+  makeTabs<-function(){
+    
+    makeDF1()
+    makeDF2()
+    makeDF3()
+    
+    MPind<- tunes==input$Tunings1 & caps == input$Configs1 & types %in% input$MPtypes1
+    
+    if(any(MPind)){
+      Tabs$Tab1<-DoTab(DFs$DF1,HLs=c(HL1,HL1,"L"),mwts=c(mwts1[[as.integer(input$WScheme)]],mwts1[[as.integer(input$WScheme)]],1),doord=T)
+      Tabs$Tab2<-DoTab(DFs$DF2,HLs=c(HL2,"L"),mwts=c(mwts2,1),stocky="East")
+      Tabs$Tab3<-DoTab(DFs$DF3,HLs=c(HL2,"L"),mwts=c(mwts2,1),stocky="West")
+    }else{
+      Tabs$Tab1<-datatable(data.frame("no"=numeric(), "results"=numeric(), "available"=numeric()))
+      Tabs$Tab2<-datatable(data.frame("no"=numeric(), "results"=numeric(), "available"=numeric()))
+      Tabs$Tab3<-datatable(data.frame("no"=numeric(), "results"=numeric(), "available"=numeric()))
+    }
+  }
+  
+  
+  radar<-function(Taby){
+    if(!is.na(Taby)){
+      
+      Taby<-Taby[,!(names(Taby)%in%c("Sum","Tot"))]
+      Taby2<-Taby
+      
+      mets<-Mets1
+      metpos<-HL1
+      mins<-rep(0,ncol(Taby2))
+      for(i in 1:ncol(Taby)){
+        if(metpos[i]=="L"){
+          Taby2[,i]<-(-Taby[,i])
+          names(Taby2)[i]<-paste0(names(Taby[i]),"i")
+          mins[i]<-min(Taby2[,i])
+        }  
+      }  
+     # Tab<-as.data.frame(rbind(apply(Taby2,2,max),apply(Taby2,2,min),Taby2))
+      Tab<-as.data.frame(rbind(apply(Taby2,2,max),mins,Taby2))
+      par(mar=rep(0.1,4))
+      cols<-c("black","red","green","blue","grey","orange","pink","brown","yellow","purple","darkred","darkgreen","darkblue")
+      radarchart(Tab,plty=1,plwd=1,pcol=cols[1:nrow(Taby2)],pfcol=makeTransparent(cols[1:nrow(Taby2)],50),seg=4,centerzero=T)
+      if(nrow(Taby)>0)legend('topright',legend=rownames(Taby2),text.col=cols[1:nrow(Taby)],bty='n')
+    }
+  }
+  
+  #output$Radar1<-renderPlot(radar(DFs$DF1))
+  
+  observeEvent(input$Make,makeTabs())
+   
+
+})

@@ -1,0 +1,293 @@
+
+library(reldist)
+setwd("C:/Users/tcar_/Dropbox/BFT MSE/Compile August 2022/")
+setwd("C:/Users/tcarruth/Dropbox/BFT MSE/Compile August 2022/")
+
+dat<-read.csv('updated MPdata 3.csv')
+dat<-dat[2:nrow(dat),]
+nd<-nrow(dat)
+
+# --- PGK plot --------------------------------------
+
+targs<-t(array(c(0.6,0.6,0.7,0.7),c(4,nd)))
+Edifs<-abs(dat$East_tune-targs)
+Wdifs<-abs(dat$West_tune-targs)
+Emin<-apply(Edifs,1,min)
+Wmin<-apply(Wdifs,1,min)
+maxdif<-apply(cbind(Emin,Wmin),1,max)
+cols<-rep('black',nd)
+cols[maxdif>0.05]<-'red'
+cols[maxdif>0.1]<-'red'
+
+setwd("C:/Users/tcar_/Dropbox/BFT MSE/")
+
+setwd("C:/Users/tcarruth/Dropbox/BFT MSE/")
+
+jpeg("./Meetings/MSE Tech Sept 2022/updated CMP tunings PGK.jpg",res=600,width=10,height=6,units="in")
+  par(mai=c(0.6,0.6,0.01,0.01))
+  plot(dat$East_tune_PGK ,dat$West_tune_PGK ,col="white")
+  abline(v=c(0.55,0.6,0.65,0.65,0.7,0.75),col="light grey",lty=c(2,1,2,2,1,2),lwd=c(1,2,1,1,2,1))
+  abline(h=c(0.55,0.6,0.65,0.65,0.7,0.75),col="light grey",lty=c(2,1,2,2,1,2),lwd=c(1,2,1,1,2,1))
+  text(dat$East_tune_PGK,dat$West_tune_PGK,dat$MP,col=cols)
+  mtext("Eastern Mean (weighted) PGK",1,line=1.8)
+  mtext("Western Mean (weighted) PGK",2,line=1.8)
+dev.off()
+
+
+
+
+
+# --- Br30 plot ----------------------------------------------------------
+
+targs<-t(array(c(1.25,1.25,1.5,1.5),c(4,nd)))
+Edifs<-abs(dat$East_tune-targs)
+Wdifs<-abs(dat$West_tune-targs)
+Emin<-apply(Edifs,1,min)
+Wmin<-apply(Wdifs,1,min)
+maxdif<-apply(cbind(Emin,Wmin),1,max)
+cols<-rep('black',nd)
+cols[maxdif>0.05]<-'red'
+cols[maxdif>0.1]<-'red'
+
+setwd("C:/Users/tcar_/Dropbox/BFT MSE/")
+
+setwd("C:/Users/tcarruth/Dropbox/BFT MSE/")
+
+jpeg("./Meetings/MSE Tech Sept 2022/updated CMP tunings.jpg",res=600,width=10,height=6,units="in")
+  par(mai=c(0.6,0.6,0.01,0.01))
+  plot(dat$East_tune,dat$West_tune,col="white")
+  abline(v=c(1.20,1.25,1.3,1.45,1.5,1.55),col="light grey",lty=c(2,1,2,2,1,2),lwd=c(1,2,1,1,2,1))
+  abline(h=c(1.20,1.25,1.3,1.45,1.5,1.55),col="light grey",lty=c(2,1,2,2,1,2),lwd=c(1,2,1,1,2,1))
+  text(dat$East_tune,dat$West_tune,dat$MP,col=cols)
+  mtext("Eastern Median (weighted) Br30",1,line=1.8)
+  mtext("Western Median (weighted) Br30",2,line=1.8)
+dev.off()
+
+
+
+
+
+
+
+
+
+
+
+
+comp<-readRDS("./Compile June 2022/CompRes.rda")
+MET<-comp$MET[,1:48,,,]
+Br30i<-match("Br30",comp$pnames)
+AvC30i<-match("AvC30",comp$pnames)
+AAVCi<-match("VarC",comp$pnames)
+
+wapply3p_qs<-function(dat,OMw,qs){
+  dim1<-dim(dat)[3]
+  out<-rep(NA,dim1)
+  for(i in 1:dim1){
+    out[i]<-wtd.quantile(as.vector(dat[,,i]),weight=rep(OMw,each=dim(dat)[1]),q=qs)
+  }
+  out
+}
+OMwt<-c(300, 300, 150, 300, 300, 150, 300, 300, 150, 300, 300, 150, 150, 150, 75, 150, 150, 75, 250, 250, 125, 250, 250, 125, 300, 300, 150, 300, 300, 150, 300, 300, 150, 300, 300, 150, 150, 150, 75, 150, 150, 75,
+        250, 250, 125, 250, 250, 125, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 150, 150, 150, 150,
+        300, 300, 300, 300, 300, 300, 300, 300)
+
+jpeg("./Meetings/Data Prep May 2022/Level 2 comps.jpg",res=600,width=9,height=5,units="in")
+
+  a_ind<-grepl("2a",comp$MPnames)
+  a_nams<-comp$MPnames[a_ind]
+  a_code<-sapply(a_nams,function(x)substr(x,1,1))
+  b_ind<-grepl("2b",comp$MPnames)
+  b_nams<-comp$MPnames[b_ind]
+  b_code<-sapply(b_nams,function(x)substr(x,1,1))
+
+  stock<-1
+
+  a_Br30 <- wapply3p_qs(MET[,,stock,a_ind,Br30i],OMwt,0.05)
+  a_AvC30 <- wapply3p_qs(MET[,,stock,a_ind,AvC30i],OMwt,0.5)
+  a_AAVC <- wapply3p_qs(MET[,,stock,a_ind,AAVCi],OMwt,0.5)
+
+  b_Br30 <- wapply3p_qs(MET[,,stock,b_ind,Br30i],OMwt,0.05)
+  b_AvC30 <- wapply3p_qs(MET[,,stock,b_ind,AvC30i],OMwt,0.5)
+  b_AAVC <- wapply3p_qs(MET[,,stock,b_ind,AAVCi],OMwt,0.5)
+
+  xlim=range(a_Br30,b_Br30)*c(0.95,1.05)
+  ylim=range(a_AvC30,b_AvC30)
+
+  codes<-unique(c(a_code,b_code))
+
+  cols<-c("black","red","green","blue","orange","grey","pink","brown","purple","darkgreen","darkred","darkblue","darkgrey")
+  dolines<-function(){abline(h=seq(0,200,by=2),col='light grey');abline(v=seq(0,2,by=0.1),col='light grey')}
+  ploty<-function(x,y,xlim,ylim,labs,cols,tag){
+    plot(x,y,xlim=xlim,ylim=ylim,xlab="",ylab="",col="white")
+    text(x,y,labs,col=cols)
+    dolines()
+    mtext(tag,3,line=0.3,font=2)
+  }
+  par(mfrow=c(1,2),mai=c(0.35,0.4,0.35,0.05),omi=c(0.35,0.4,0,0))
+
+  ploty(a_Br30,a_AvC30,labs=a_nams,xlim=xlim,ylim=ylim,cols=cols[match(a_code,codes)],tag="(a) max 30% TAC decrease")
+  ploty(b_Br30,b_AvC30,labs=b_nams,xlim=xlim,ylim=ylim,cols=cols[match(b_code,codes)],tag="(b) max 20% TAC decrease")
+
+  mtext("Eastern Br30 (5th percentile)",1,outer=T)
+  mtext("East Area AvC30 (median) (kt)",2,outer=T)
+dev.off()
+
+
+jpeg("./Meetings/Data Prep Apr 2022/Level 2 comps West.jpg",res=600,width=9,height=5,units="in")
+
+  a_ind<-grepl("2a",comp$MPnames)
+  a_nams<-comp$MPnames[a_ind]
+  a_code<-sapply(a_nams,function(x)substr(x,1,1))
+  b_ind<-grepl("2b",comp$MPnames)
+  b_nams<-comp$MPnames[b_ind]
+  b_code<-sapply(b_nams,function(x)substr(x,1,1))
+
+  stock<-2
+
+  a_Br30 <- wapply3p_qs(MET[,,stock,a_ind,Br30i],OMwt,0.05)
+  a_AvC30 <- wapply3p_qs(MET[,,stock,a_ind,AvC30i],OMwt,0.5)
+  a_AAVC <- wapply3p_qs(MET[,,stock,a_ind,AAVCi],OMwt,0.5)
+
+  b_Br30 <- wapply3p_qs(MET[,,stock,b_ind,Br30i],OMwt,0.05)
+  b_AvC30 <- wapply3p_qs(MET[,,stock,b_ind,AvC30i],OMwt,0.5)
+  b_AAVC <- wapply3p_qs(MET[,,stock,b_ind,AAVCi],OMwt,0.5)
+
+  xlim=range(a_Br30,b_Br30)*c(0.95,1.05)
+  ylim=range(a_AvC30,b_AvC30)
+
+  codes<-unique(c(a_code,b_code))
+
+  cols<-c("black","red","green","blue","orange","grey","pink","brown","purple","darkgreen","darkred","darkblue","darkgrey")
+  dolines<-function(){abline(h=seq(0,200,by=0.2),col='light grey');abline(v=seq(0,2,by=0.1),col='light grey')}
+  ploty<-function(x,y,xlim,ylim,labs,cols,tag){
+    plot(x,y,xlim=xlim,ylim=ylim,xlab="",ylab="",col="white")
+    text(x,y,labs,col=cols)
+    dolines()
+    mtext(tag,3,line=0.3,font=2)
+  }
+  par(mfrow=c(1,2),mai=c(0.35,0.4,0.35,0.05),omi=c(0.35,0.4,0,0))
+
+  ploty(a_Br30,a_AvC30,labs=a_nams,xlim=xlim,ylim=ylim,cols=cols[match(a_code,codes)],tag="(a) max 30% TAC decrease")
+  ploty(b_Br30,b_AvC30,labs=b_nams,xlim=xlim,ylim=ylim,cols=cols[match(b_code,codes)],tag="(b) max 20% TAC decrease")
+
+  mtext("Western Br30 (5th percentile)",1,outer=T)
+  mtext("West Area AvC30 (median) (kt)",2,outer=T)
+dev.off()
+
+
+# ========== Correlation plots ==============================================================================================
+
+OM_wt<-c(300, 300, 150, 300, 300, 150, 300, 300, 150, 300, 300, 150, 150, 150, 75, 150, 150, 75, 250, 250, 125, 250, 250, 125, 300, 300, 150, 300, 300, 150, 300, 300, 150, 300, 300, 150, 150, 150, 75, 150, 150, 75,
+        250, 250, 125, 250, 250, 125, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 150, 150, 150, 150,
+        300, 300, 300, 300, 300, 300, 300, 300)
+
+MET<-comp$MET
+pnames<-comp$pnames
+MPnames<-comp$MPnames
+MPtypes<-unique(sapply(MPnames,function(x)substr(x,1,2)))
+nMPs<-length(MPnames)
+OMind<-1:48
+tuneids <- sapply(MPnames,function(x)substr(x,3,3))
+capids<-sapply(MPnames,function(x)substr(x,4,4))
+MPind<-!(tuneids%in%c("r","0"))&!(capids%in%"x")
+tunes <- sapply(MPnames[MPind],function(x)substr(x,3,3))
+caps <- sapply(MPnames[MPind],function(x)substr(x,4,4))
+types<-sapply(MPnames[MPind],function(x)substr(x,1,2))
+
+alltypes<-paste0(types,caps)
+#             1       2       3
+metric <- c(   "C1", "AvC10", "AvC30", "VarC",    "LD",   "LD",   "Br30")
+HL     <- c(   "H",    "H",     "H",     "L",     "H",    "H",     "H")
+qsl     <- list( 0.5,    0.5,     0.5,  0.5,      0.05,   0.15, 0.5)
+qs <- unlist(qsl)
+mets<-rep(metric,unlist(lapply(qsl,function(x)length(x))))
+HLs<-c(rep(HL,unlist(lapply(qsl,function(x)length(x)))),"L") # add on the mean ranking High-low switch
+nc <- length(mets)
+nr<-sum(MPind)
+restab <- array(NA, c(nr,nc))
+
+quant<-function(x,star,digits=3){
+  met  = match(mets[x],pnames)
+  dat  = MET[,OMind,star,MPind,met] # [sim, OM, MP]
+  dim1 = dim(dat)[3]
+  out  = rep(NA,dim1)
+  for(i in 1:dim1)    out[i] = wtd.quantile(as.vector(dat[, , i]), weight = rep(OM_wt[OMind], each = dim(dat)[1]), q = qs[x])
+  round(out,digits=digits)
+}
+
+East<-as.data.frame(sapply(1:nc,quant,star=1))
+West<-as.data.frame(sapply(1:nc,quant,star=2))
+names(East) <- names(West) <- paste0(mets," (",qs*100,"%)")
+row.names(East)<-row.names(West)<-MPnames[MPind]
+
+
+
+
+jpeg("./Meetings/MSE Tech May 2022/Cor tune E AvC30.jpg",res=600,width=8,height=5,units="in")
+
+  c1<-"a"
+  perfno<-3
+  cols<-c("black","red","green","blue","orange","grey","pink","brown","purple","darkgreen","darkred","darkblue","darkgrey")
+  utypes<-unique(types)
+  par(mfrow=c(3,2),mai=c(0.6,0.6,0.05,0.01),omi=c(0,0,0.3,0))
+
+  for(tuneno in 1:3){
+    ind1<-tunes==tuneno & caps==c1
+    c1dat<-East[ind1,]
+    MPsc1<-row.names(c1dat)
+    types1<-types[ind1]
+    for(tuneno2 in 2:4){
+      if(tuneno!=tuneno2 & !(tuneno==3&tuneno2==2)){
+        ind2<-tunes==tuneno2 & caps==c1
+        c2dat<-East[ind2,]
+        MPsc2<-row.names(c2dat)
+        types2<-types[ind2]
+        keep<-types1[types1%in%types2]
+        kind1<-match(keep,types1)
+        kind2<-match(keep,types2)
+        plot(c1dat[kind1,perfno],c2dat[kind2,perfno],col="white",xlab=tuneno,ylab=tuneno2,ylim=c(0.98,1.02)*range(c2dat[kind2,perfno]),xlim=c(0.98,1.02)*range(c1dat[kind1,perfno]))
+        text(c1dat[kind1,perfno],c2dat[kind2,perfno],keep,col=cols[match(keep,utypes)],cex=1.2)
+      }
+    }
+  }
+  mtext(paste("East: ",names(East)[perfno]),3,outer=T,line=0.2)
+
+dev.off()
+
+
+
+
+jpeg("./Meetings/MSE Tech May 2022/Cor tune W AvC30.jpg",res=600,width=8,height=5,units="in")
+
+  c1<-"a"
+  perfno<-3
+  cols<-c("black","red","green","blue","orange","grey","pink","brown","purple","darkgreen","darkred","darkblue","darkgrey")
+  utypes<-unique(types)
+  par(mfrow=c(3,2),mai=c(0.6,0.6,0.05,0.01),omi=c(0,0,0.3,0))
+
+  for(tuneno in 1:3){
+    ind1<-tunes==tuneno & caps==c1
+    c1dat<-West[ind1,]
+    MPsc1<-row.names(c1dat)
+    types1<-types[ind1]
+    for(tuneno2 in 2:4){
+      if(tuneno!=tuneno2 & !(tuneno==3&tuneno2==2)){
+        ind2<-tunes==tuneno2 & caps==c1
+        c2dat<-West[ind2,]
+        MPsc2<-row.names(c2dat)
+        types2<-types[ind2]
+        keep<-types1[types1%in%types2]
+        kind1<-match(keep,types1)
+        kind2<-match(keep,types2)
+        plot(c1dat[kind1,perfno],c2dat[kind2,perfno],col="white",xlab=tuneno,ylab=tuneno2,ylim=c(0.98,1.02)*range(c2dat[kind2,perfno]),xlim=c(0.98,1.02)*range(c1dat[kind1,perfno]))
+        text(c1dat[kind1,perfno],c2dat[kind2,perfno],keep,col=cols[match(keep,utypes)],cex=1.2)
+      }
+    }
+  }
+  mtext(paste("West: ",names(East)[perfno]),3,outer=T,line=0.2)
+
+dev.off()
+
+
+

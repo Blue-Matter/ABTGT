@@ -3,7 +3,7 @@
     "path": "C:/GitHub/ABTGT/docs/index.Rmd",
     "project_path": null,
     "type": "r_markdown",
-    "hash": "371676077",
+    "hash": "879950914",
     "contents": "",
     "dirty": false,
     "created": 1661978187483.0,
@@ -12,16 +12,16 @@
     "properties": {
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "204,0",
-        "scrollLine": "200",
-        "last_setup_crc32": "CFC67603f8ddda5c"
+        "cursorPosition": "97,6",
+        "scrollLine": "80",
+        "last_setup_crc32": ""
     },
     "folds": "",
-    "lastKnownWriteTime": 1661988449,
+    "lastKnownWriteTime": 1662050269,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1661988449099,
+    "last_content_update": 1662050269337,
     "read_only": false,
     "read_only_alternatives": []
 }

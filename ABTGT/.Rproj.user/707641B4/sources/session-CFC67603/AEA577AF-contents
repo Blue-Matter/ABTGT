@@ -1,0 +1,137 @@
+# =============================================================================================================================================
+# === Compiling all CompRes files =============================================================================================================
+# =============================================================================================================================================
+
+# Tom Carruthers
+# July 2021
+
+
+
+# --- Load CompRes objects into a list ------------------------------------
+library(ABTMSE)
+loadABT()
+setwd("C:/Users/tcar_/Dropbox/BFT MSE/Compile August 2022/")
+setwd("C:/Users/tcarruth/Dropbox/BFT MSE/Compile August 2022/")
+CompFiles <- list.files("Stoch",full.names=T,include.dirs=T)
+
+ResList<-list()
+
+j=1
+for(i in 1:length(CompFiles)){
+  tryCatch(
+    {
+      ResList[[j]]<-readRDS(CompFiles[i])
+      print(ResList[[j]]$Version)
+      j=j+1
+    },
+    error=function(e){
+     print(e)
+     print(paste("Load error, skipping:",CompFiles[i]))
+    }
+  )
+}
+
+
+all<-all2<-Join_Results(ResList)
+#all2$Version<-"7.5.4"
+all2$Sys.time<-Sys.time()
+
+
+#oldnames=c("Fz2a","FO2A","FY2A")
+#newnames=c("FZ2a","FO2a","FY2a")
+#ind<-match(oldnames,all$MPnames)
+#all2$MPnames[ind]<-newnames
+#all2$MPnames[8]<-"TN2a"
+#all2$MPnames[9]<-"TN2c"
+
+all2$pdesc[4]<-"Catch in first projection year"
+all2$pdesc[8]<-"Depletion (spawning biomass relative to dynamic BMSY) after the first 10 projected years"
+all2$pdesc[9]<-"Depletion (spawning biomass relative to dynamic BMSY) after projection year 20"
+all2$pdesc[10]<-"Depletion (spawning biomass relative to dynamic BMSY) after projection year 30"
+all2$pdesc[11]<-"Lowest depletion (spawning biomass relative to dynamic BMSY) in projection years 11 - 30"
+
+
+cons<-sapply(all2$MPnames,function(x)paste0(substr(x,3,3),substr(x,1,1),substr(x,4,4)))
+cons[1]<-"0A"
+ord<-order(cons)
+all2$MET[]<-all2$MET[,,,ord,]
+all2$Rec[]<-all2$Rec[,,,ord,]
+all2$CW[]<-all2$CW[,,,ord,]
+all2$CWa[]<-all2$CWa[,,,ord,]
+all2$B_BMSY[]<-all2$B_BMSY[,,,ord,]
+all2$F_BMSY[]<-all2$F_BMSY[,,,ord,]
+all2$CMPdesc[]<-all2$CMPdesc[ord]
+all2$MPnames[]<-all2$MPnames[ord]
+
+#keep<-!(all2$MPnames%in%c("TC4c"))#(all2$MPnames,function(x)paste0(substr(x,3,3),substr(x,1,1),substr(x,4,4)))
+#all2$MET<-all2$MET[,,,keep,]
+#all2$Rec<-all2$Rec[,,,keep,]
+#all2$CW<-all2$CW[,,,keep,]
+#all2$CWa<-all2$CWa[,,,keep,]
+#all2$B_BMSY<-all2$B_BMSY[,,,keep,]
+#all2$F_BMSY<-all2$F_BMSY[,,,keep,]
+#all2$CMPdesc<-all2$CMPdesc[keep]
+#all2$MPnames<-all2$MPnames[keep]
+
+saveRDS(all2, 'CompRes.rda')
+
+
+
+
+wapply3p_qs<-function(dat,OMw,qs){
+  dim1<-dim(dat)[3]
+  out<-rep(NA,dim1)
+  for(i in 1:dim1){
+    out[i]<-wtd.quantile(as.vector(dat[,,i]),weight=rep(OMw,each=dim(dat)[1]),q=qs)
+  }
+  out
+}
+
+
+wapply34_mu<-function(dat,OMw){
+  dim1<-dim(dat)[3]
+  dim2<-dim(dat)[4]
+  out<-array(NA,c(dim1,dim2))
+
+  for(i in 1:dim1){for(j in 1:dim2){
+    out[i,j]<-weighted.mean(as.vector(dat[,,i,j]),w=rep(OMw,each=dim(dat)[1]))
+  }}
+  out
+}
+
+
+wapply3p_mu<-function(dat,OMw,qs){
+  dim1<-dim(dat)[3]
+  out<-rep(NA,dim1)
+  for(i in 1:dim1){
+    out[i]<-weighted.mean(x=as.vector(dat[,,i]),w=rep(OMw,each=dim(dat)[1]))
+  }
+  out
+}
+
+OMwt<-c(300, 300, 150, 300, 300, 150, 300, 300, 150, 300, 300, 150, 150, 150, 75, 150, 150, 75, 250, 250, 125, 250, 250, 125, 300, 300, 150, 300, 300, 150, 300, 300, 150, 300, 300, 150, 150, 150, 75, 150, 150, 75,
+        250, 250, 125, 250, 250, 125, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 150, 150, 150, 150,
+        300, 300, 300, 300, 300, 300, 300, 300)
+
+# dim(all2$CWa) # sim, OM, stock/area, MP, year
+
+BR30ind<-match('Br30',all2$pnames)
+PGKind<-match('PGK',all2$pnames)
+
+EastTune<-wapply3p_qs(dat=all2$MET[,1:48,1,,BR30ind],OMw=OMwt[1:48],qs=0.5)
+WestTune<-wapply3p_qs(all2$MET[,1:48,2,,BR30ind],OMwt[1:48],0.5)
+EastTune_mu<-wapply3p_mu(dat=all2$MET[,1:48,1,,PGKind],OMw = OMwt[1:48])
+WestTune_mu<-wapply3p_mu(all2$MET[,1:48,2,,PGKind],OMwt[1:48])
+
+codes<-sapply(all2$MPnames,function(x)substr(x,1,2))
+newcode<-codes
+newcode[newcode=="Ze"]<-"ZeroC"
+
+dat<-data.frame(MP=all2$MPnames,newcode,West_tune=round(WestTune,3),
+                East_tune=round(EastTune,3),West_tune_PGK = round(WestTune_mu,3),
+                East_tune_PGK = round(EastTune_mu,3))
+
+write.csv(dat,'updated MPdata 3.csv')
+
+
+# === End =====================================================================================================================================
